@@ -1,0 +1,57 @@
+{
+  "manifest_version": 3,
+  "name": "Douyin User Video Downloader",
+  "version": "1.0.0",
+  "description": "Batch download videos, audios, and metadata from Douyin user profiles.",
+  "permissions": [
+    "downloads",
+    "storage",
+    "activeTab",
+    "scripting",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://www.douyin.com/*",
+    "https://*.douyin.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.douyin.com/user/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "style.css"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "QR.png"
+      ],
+      "matches": [
+        "https://www.douyin.com/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_title": "Douyin User Video Downloader",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png"
+    }
+  }
+}

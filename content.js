@@ -32,7 +32,6 @@
     APPLY_RANGE_ID: "dyex-apply-range",
     CLEAR_RANGE_ID: "dyex-clear-range",
     FOLDER_INPUT_ID: "dyex-folder-input",
-    CHOOSE_FOLDER_ID: "dyex-choose-folder",
     DELAY_INPUT_ID: "dyex-delay-input",
     WAIT_TIMEOUT_MS: 30000,
     WAIT_INTERVAL_MS: 150,
@@ -370,9 +369,6 @@
       this.assets = {
         qrUrl: chrome.runtime.getURL("QR.png")
       };
-      this.directoryHandle = null;
-      this.activeDownloadMode = "downloads";
-      this.cancelDirectSaveRequested = false;
       this.isFetching = false;
       this.isDownloading = false;
       this.modalOpen = false;
@@ -513,7 +509,6 @@
                         <button id="${CONFIG.CLEAR_RANGE_ID}" type="button" class="dyex-button dyex-button-tertiary">Unselect Range</button>
                       </div>
                       <input id="${CONFIG.FOLDER_INPUT_ID}" class="dyex-input dyex-folder-input" type="text" placeholder="File prefix">
-                      <button id="${CONFIG.CHOOSE_FOLDER_ID}" type="button" class="dyex-button dyex-button-secondary">Choose Folder</button>
                       <label class="dyex-delay-wrap">
                         <span>Delay (ms)</span>
                         <input id="${CONFIG.DELAY_INPUT_ID}" class="dyex-input dyex-delay-input" type="number" min="0" step="100">
@@ -573,7 +568,6 @@
       this.ui.applyRangeButton = document.getElementById(CONFIG.APPLY_RANGE_ID);
       this.ui.clearRangeButton = document.getElementById(CONFIG.CLEAR_RANGE_ID);
       this.ui.folderInput = document.getElementById(CONFIG.FOLDER_INPUT_ID);
-      this.ui.chooseFolderButton = document.getElementById(CONFIG.CHOOSE_FOLDER_ID);
       this.ui.delayInput = document.getElementById(CONFIG.DELAY_INPUT_ID);
     }
 
@@ -590,7 +584,6 @@
       this.ui.applyRangeButton.addEventListener("click", () => this.applyRangeSelection());
       this.ui.clearRangeButton.addEventListener("click", () => this.clearRangeSelection());
       this.ui.folderInput.addEventListener("change", () => this.handleSettingsChange());
-      this.ui.chooseFolderButton.addEventListener("click", () => this.handleChooseFolder());
       this.ui.delayInput.addEventListener("change", () => this.handleSettingsChange());
 
       this.ui.selectAll.addEventListener("change", (event) => {
@@ -695,49 +688,6 @@
         console.error("Failed to save settings:", error);
         this.setStatus("Failed to save settings.", "error");
       });
-    }
-
-    async handleChooseFolder() {
-      if (this.isDownloading || this.isFetching) return;
-
-      if (typeof window.showDirectoryPicker !== "function") {
-        this.setStatus("This browser does not support directory picker.", "error");
-        return;
-      }
-
-      try {
-        const handle = await window.showDirectoryPicker({ mode: "readwrite" });
-        const permission = await this.ensureDirectoryPermission(handle);
-        if (permission !== "granted") {
-          this.setStatus("Folder permission was not granted.", "error");
-          return;
-        }
-
-        this.directoryHandle = handle;
-        this.ui.chooseFolderButton.textContent = `Folder: ${handle.name}`;
-        this.setStatus(`Selected save folder: ${handle.name}`, "success");
-      } catch (error) {
-        if (error?.name === "AbortError") {
-          return;
-        }
-        console.error("Failed to choose folder:", error);
-        this.setStatus(error.message || "Failed to choose folder.", "error");
-      }
-    }
-
-    async ensureDirectoryPermission(handle) {
-      if (!handle) return "denied";
-
-      if (typeof handle.queryPermission === "function") {
-        const current = await handle.queryPermission({ mode: "readwrite" });
-        if (current === "granted") return current;
-      }
-
-      if (typeof handle.requestPermission === "function") {
-        return handle.requestPermission({ mode: "readwrite" });
-      }
-
-      return "denied";
     }
 
     handleFilterChange() {
@@ -1056,7 +1006,6 @@
       this.ui.applyRangeButton.disabled = this.isFetching || this.isDownloading;
       this.ui.clearRangeButton.disabled = this.isFetching || this.isDownloading;
       this.ui.folderInput.disabled = this.isDownloading;
-      this.ui.chooseFolderButton.disabled = this.isFetching || this.isDownloading;
       this.ui.delayInput.disabled = this.isDownloading;
     }
 
@@ -1152,11 +1101,6 @@
       this.ui.dateToInput.value = "";
       this.ui.rangeStartInput.value = "";
       this.ui.rangeEndInput.value = "";
-      if (this.directoryHandle) {
-        this.ui.chooseFolderButton.textContent = `Folder: ${this.directoryHandle.name}`;
-      } else {
-        this.ui.chooseFolderButton.textContent = "Choose Folder";
-      }
       this.renderTable();
       this.updateSelectionUi();
       this.updateControlState();
@@ -1296,60 +1240,6 @@
       return [header.join(","), ...rows].join("\n");
     }
 
-    async fetchBlobWithRetry(url) {
-      return retryWithDelay(async () => {
-        const response = await fetch(url, {
-          method: "GET",
-          credentials: "include"
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status} while downloading media`);
-        }
-
-        return response.blob();
-      }, 3, 1200);
-    }
-
-    async getTargetDirectoryHandle(relativePath) {
-      const permission = await this.ensureDirectoryPermission(this.directoryHandle);
-      if (permission !== "granted") {
-        throw new Error("Folder permission is no longer granted.");
-      }
-
-      const segments = String(relativePath || "")
-        .split("/")
-        .filter(Boolean);
-
-      let directory = this.directoryHandle;
-      for (const segment of segments) {
-        directory = await directory.getDirectoryHandle(segment, { create: true });
-      }
-
-      return directory;
-    }
-
-    async saveBlobToChosenFolder(relativeFilename, blob) {
-      if (!this.directoryHandle) {
-        throw new Error("No custom folder selected.");
-      }
-
-      const parts = String(relativeFilename).split("/").filter(Boolean);
-      const fileName = parts.pop();
-      const directory = await this.getTargetDirectoryHandle(parts.join("/"));
-      const fileHandle = await directory.getFileHandle(fileName, { create: true });
-      const writable = await fileHandle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-    }
-
-    async saveTextToChosenFolder(relativeFilename, content, mimeType) {
-      const blob = new Blob([content], {
-        type: mimeType || "text/plain;charset=utf-8"
-      });
-      await this.saveBlobToChosenFolder(relativeFilename, blob);
-    }
-
     async handleDownloadAction(action) {
       if (!action || this.isFetching || this.isDownloading) return;
 
@@ -1398,28 +1288,8 @@
       }
 
       this.isDownloading = true;
-      this.cancelDirectSaveRequested = false;
-      this.activeDownloadMode = this.directoryHandle ? "direct" : "downloads";
       this.updateControlState();
-      this.setStatus(
-        this.activeDownloadMode === "direct" ? `Saving ${kind} files to selected folder...` : `Preparing ${kind} queue...`,
-        "info",
-        true
-      );
-
-      if (this.activeDownloadMode === "direct") {
-        try {
-          await this.saveMediaDirectly(items, kind);
-        } catch (error) {
-          console.error("Direct save failed:", error);
-          this.setStatus(error.message || "Direct save failed.", "error");
-        } finally {
-          this.isDownloading = false;
-          this.activeDownloadMode = "downloads";
-          this.updateControlState();
-        }
-        return;
-      }
+      this.setStatus(`Preparing ${kind} queue...`, "info", true);
 
       try {
         const response = await sendRuntimeMessage({
@@ -1436,58 +1306,13 @@
         }
       } catch (error) {
         this.isDownloading = false;
-        this.activeDownloadMode = "downloads";
         this.updateControlState();
         this.setStatus(error.message || "Failed to start download queue.", "error");
       }
     }
 
-    async saveMediaDirectly(items, kind) {
-      let successCount = 0;
-      let failedCount = 0;
-
-      for (let index = 0; index < items.length; index += 1) {
-        if (this.cancelDirectSaveRequested) {
-          this.setStatus(`Direct save cancelled. Success: ${successCount}, failed: ${failedCount}.`, failedCount ? "error" : "info");
-          return;
-        }
-
-        const item = items[index];
-        this.setStatus(`Saving ${kind} ${index + 1}/${items.length}...`, "info", true);
-
-        try {
-          const blob = await this.fetchBlobWithRetry(item.url);
-          await this.saveBlobToChosenFolder(item.filename, blob);
-          successCount += 1;
-        } catch (error) {
-          failedCount += 1;
-          console.error(`Failed to save ${item.filename}:`, error);
-        }
-
-        if (index < items.length - 1) {
-          await sleep(this.settings.queueDelayMs);
-        }
-      }
-
-      this.setStatus(`Direct save complete. Success: ${successCount}, failed: ${failedCount}.`, failedCount ? "error" : "success");
-    }
-
     async exportMetadata(selectedVideos) {
       const exportPrefix = sanitizeFileComponent((sanitizeFolderPath(this.settings.downloadFolder) || "douyin_downloads").replace(/\//g, "_"), "douyin_downloads");
-      if (this.directoryHandle) {
-        try {
-          await this.saveTextToChosenFolder(
-            `${sanitizeFolderPath(this.settings.downloadFolder) || "douyin_downloads"}/exports/${exportPrefix}-video-data-${timestampForFile()}.json`,
-            JSON.stringify(selectedVideos, null, 2),
-            "application/json;charset=utf-8"
-          );
-          this.setStatus(`Metadata saved to selected folder for ${selectedVideos.length} videos.`, "success");
-        } catch (error) {
-          this.setStatus(error.message || "Metadata export failed.", "error");
-        }
-        return;
-      }
-
       try {
         const response = await sendRuntimeMessage({
           type: "DOWNLOAD_TEXT_FILE",
@@ -1512,20 +1337,6 @@
       const links = selectedVideos.map((video) => video.videoUrl).filter(Boolean).join("\n");
       const exportPrefix = sanitizeFileComponent((sanitizeFolderPath(this.settings.downloadFolder) || "douyin_downloads").replace(/\//g, "_"), "douyin_downloads");
 
-      if (this.directoryHandle) {
-        try {
-          await this.saveTextToChosenFolder(
-            `${sanitizeFolderPath(this.settings.downloadFolder) || "douyin_downloads"}/exports/${exportPrefix}-video-links-${timestampForFile()}.txt`,
-            links,
-            "text/plain;charset=utf-8"
-          );
-          this.setStatus(`Video links saved to selected folder for ${selectedVideos.length} videos.`, "success");
-        } catch (error) {
-          this.setStatus(error.message || "Link export failed.", "error");
-        }
-        return;
-      }
-
       try {
         const response = await sendRuntimeMessage({
           type: "DOWNLOAD_TEXT_FILE",
@@ -1548,20 +1359,6 @@
 
     async exportCsv(selectedVideos) {
       const exportPrefix = sanitizeFileComponent((sanitizeFolderPath(this.settings.downloadFolder) || "douyin_downloads").replace(/\//g, "_"), "douyin_downloads");
-      if (this.directoryHandle) {
-        try {
-          await this.saveTextToChosenFolder(
-            `${sanitizeFolderPath(this.settings.downloadFolder) || "douyin_downloads"}/exports/${exportPrefix}-video-data-${timestampForFile()}.csv`,
-            this.buildCsvContent(selectedVideos),
-            "text/csv;charset=utf-8"
-          );
-          this.setStatus(`CSV saved to selected folder for ${selectedVideos.length} videos.`, "success");
-        } catch (error) {
-          this.setStatus(error.message || "CSV export failed.", "error");
-        }
-        return;
-      }
-
       try {
         const response = await sendRuntimeMessage({
           type: "DOWNLOAD_TEXT_FILE",
@@ -1584,12 +1381,6 @@
 
     async handleCancelQueue() {
       if (!this.isDownloading) return;
-
-      if (this.activeDownloadMode === "direct") {
-        this.cancelDirectSaveRequested = true;
-        this.setStatus("Cancelling direct save...", "info", true);
-        return;
-      }
 
       try {
         const response = await sendRuntimeMessage({ type: "CANCEL_DOWNLOAD_QUEUE" });

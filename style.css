@@ -414,13 +414,6 @@
   width: 96px;
 }
 
-#dyex-choose-folder {
-  max-width: 190px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .dyex-select-all {
   display: inline-flex;
   align-items: center;

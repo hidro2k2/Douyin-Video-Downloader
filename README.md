@@ -15,121 +15,121 @@ A Chrome Extension Manifest V3 for fetching, previewing, filtering, and batch-do
 
 ---
 
-## Vietnamese
+## Tiếng Việt
 
-### Gioi thieu
+### Giới thiệu
 
-`Douyin User Video Downloader` la extension Chrome giup lay toan bo video tu trang profile Douyin, hien thi danh sach de chon, loc, tim kiem, export metadata va tai hang loat.
+`Douyin User Video Downloader` là extension Chrome giúp lấy toàn bộ video từ trang profile Douyin, hiển thị danh sách để chọn, lọc, tìm kiếm, export metadata và tải hàng loạt.
 
-Extension hien tai tap trung vao 4 muc tieu:
+Extension hiện tại tập trung vào 4 mục tiêu:
 
-| Muc tieu | Mo ta |
+| Mục tiêu | Mô tả |
 | --- | --- |
-| Fetch toan bo video | Lay video qua API Douyin theo phan trang |
-| Quan ly danh sach | Search, filter theo ngay, select range, unselect range |
+| Fetch toàn bộ video | Lấy video qua API Douyin theo phân trang |
+| Quản lý danh sách | Search, lọc theo ngày, select range, unselect range |
 | Batch download | Download video/audio, export JSON/TXT/CSV |
-| Luu file linh hoat | Dung Chrome Downloads API hoac chon folder de luu truc tiep |
+| Lưu file linh hoạt | Dùng Chrome Downloads API hoặc chọn folder để lưu trực tiếp |
 
-### Tinh nang chinh
+### Tính năng chính
 
-| Nhom tinh nang | Chi tiet |
+| Nhóm tính năng | Chi tiết |
 | --- | --- |
-| UI Downloader | Chen nut download nho ngay tren profile Douyin, mo modal o giua man hinh |
-| Fetch API | Tu lay `sec_user_id`, goi API Douyin, retry + delay de on dinh hon |
-| Hien thi video | Cover, title, caption, date, link Video/Audio |
-| Search va filter | Tim theo `title` / `caption`, loc ngay `from` / `to` |
-| Chon video | Checkbox tung dong, `Select All`, `Select Range`, `Unselect Range` |
+| UI Downloader | Chèn nút download nhỏ ngay trên profile Douyin, mở modal ở giữa màn hình |
+| Fetch API | Tự lấy `sec_user_id`, gọi API Douyin, retry + delay để ổn định hơn |
+| Hiển thị video | Cover, title, caption, date, link Video/Audio |
+| Search và filter | Tìm theo `title` / `caption`, lọc ngày `from` / `to` |
+| Chọn video | Checkbox từng dòng, `Select All`, `Select Range`, `Unselect Range` |
 | Download | MP4, MP3, JSON, TXT, CSV |
-| Queue control | Co nut `Stop` de dung download dang chay |
-| Save mode | Chon folder truc tiep bang `Choose Folder` hoac dung flow tai file cua Chrome |
-| Settings | Nho `File prefix` va `Delay (ms)` bang `chrome.storage` |
-| Donate | Popup donate nho trong header, giu UI dong bo |
+| Queue control | Có nút `Stop` để dừng download đang chạy |
+| Save mode | Chọn folder trực tiếp bằng `Choose Folder` hoặc dùng flow tải file của Chrome |
+| Settings | Nhớ `File prefix` và `Delay (ms)` bằng `chrome.storage` |
+| Donate | Popup donate nhỏ trong header, giữ UI đồng bộ |
 
-### Cai dat
+### Cài đặt
 
-| Buoc | Thao tac |
+| Bước | Thao tác |
 | --- | --- |
-| 1 | Mo `chrome://extensions` |
-| 2 | Bat `Developer mode` |
-| 3 | Bam `Load unpacked` |
-| 4 | Chon thu muc project nay |
-| 5 | Sau moi lan sua code, bam `Reload` |
+| 1 | Mở `chrome://extensions` |
+| 2 | Bật `Developer mode` |
+| 3 | Bấm `Load unpacked` |
+| 4 | Chọn thư mục project này |
+| 5 | Sau mỗi lần sửa code, bấm `Reload` |
 
-### Cach dung
+### Cách dùng
 
-1. Mo trang profile Douyin theo mau `https://www.douyin.com/user/*`.
-2. Bam icon download nho o khu vuc tab video.
-3. Trong modal, bam `Fetch Videos`.
-4. Neu can, dung cac cong cu loc:
+1. Mở trang profile Douyin theo mẫu `https://www.douyin.com/user/*`.
+2. Bấm icon download nhỏ ở khu vực tab video.
+3. Trong modal, bấm `Fetch Videos`.
+4. Nếu cần, dùng các công cụ lọc:
 
-| Cong cu | Tac dung |
+| Công cụ | Tác dụng |
 | --- | --- |
-| Search | Tim theo `title` hoac `caption` |
-| Date From / Date To | Loc theo ngay tao video |
-| Select Range | Chon theo so thu tu dang hien thi |
-| Unselect Range | Bo chon theo so thu tu dang hien thi |
-| Select All | Chon tat ca video dang hien thi |
-| Reset Filters | Xoa search va filter ngay |
+| Search | Tìm theo `title` hoặc `caption` |
+| Date From / Date To | Lọc theo ngày tạo video |
+| Select Range | Chọn theo số thứ tự đang hiển thị |
+| Unselect Range | Bỏ chọn theo số thứ tự đang hiển thị |
+| Select All | Chọn tất cả video đang hiển thị |
+| Reset Filters | Xóa search và filter ngày |
 
-5. Dat `File prefix` neu muon doi phan dau ten file.
-6. Dat `Delay (ms)` neu muon download cham hon hoac nhanh hon.
-7. Neu muon luu vao mot thu muc cu the, bam `Choose Folder`.
-8. Bam `Download` va chon loai file can tai.
-9. Neu can dung giua chung, bam `Stop`.
+5. Đặt `File prefix` nếu muốn đổi phần đầu tên file.
+6. Đặt `Delay (ms)` nếu muốn download chậm hơn hoặc nhanh hơn.
+7. Nếu muốn lưu vào một thư mục cụ thể, bấm `Choose Folder`.
+8. Bấm `Download` và chọn loại file cần tải.
+9. Nếu cần dừng giữa chừng, bấm `Stop`.
 
-### Giai thich giao dien
+### Giải thích giao diện
 
-| Thanh phan | Y nghia |
+| Thành phần | Ý nghĩa |
 | --- | --- |
-| Fetch Videos | Lay toan bo video tu profile |
-| Download | Mo menu download/export |
-| Stop | Dung queue download dang chay |
-| File prefix | Dat tien to cho ten file |
-| Choose Folder | Chon thu muc luu truc tiep |
-| Delay (ms) | Do tre giua cac file trong queue |
-| Title / Caption | Hien thi title va caption lay tu API |
+| Fetch Videos | Lấy toàn bộ video từ profile |
+| Download | Mở menu download/export |
+| Stop | Dừng queue download đang chạy |
+| File prefix | Đặt tiền tố cho tên file |
+| Choose Folder | Chọn thư mục lưu trực tiếp |
+| Delay (ms) | Độ trễ giữa các file trong queue |
+| Title / Caption | Hiển thị title và caption lấy từ API |
 
-### Dat ten file
+### Đặt tên file
 
-Input `File prefix` duoc dung lam phan dau cua ten file.
+Input `File prefix` được dùng làm phần đầu của tên file.
 
-Vi du:
+Ví dụ:
 
 ```text
 douyin_downloads_caption-video_2026-03-29_123456789.mp4
 caucaTV_caption-video_2026-03-29_123456789.mp3
 ```
 
-Quy tac:
+Quy tắc:
 
-| Phan | Nguon |
+| Phần | Nguồn |
 | --- | --- |
-| Prefix | Lay tu input `File prefix` |
-| Noi dung ten | Uu tien `caption`, fallback sang `title` |
+| Prefix | Lấy từ input `File prefix` |
+| Nội dung tên | Ưu tiên `caption`, fallback sang `title` |
 | Date | `YYYY-MM-DD` |
-| ID | `aweme_id` cua video |
+| ID | `aweme_id` của video |
 
-### Export du lieu
+### Export dữ liệu
 
-| Dinh dang | Noi dung |
+| Định dạng | Nội dung |
 | --- | --- |
-| JSON | Full metadata cua video da chon |
-| TXT | Danh sach link video, moi dong 1 link |
-| CSV | Metadata dang bang, de mo bang Excel/Sheets |
+| JSON | Full metadata của video đã chọn |
+| TXT | Danh sách link video, mỗi dòng 1 link |
+| CSV | Metadata dạng bảng, để mở bằng Excel/Sheets |
 
 ### Save mode
 
-| Cach luu | Mo ta |
+| Cách lưu | Mô tả |
 | --- | --- |
-| Chrome Downloads API | Neu chua chon folder, extension tai theo flow cua Chrome |
-| Direct save | Neu da bam `Choose Folder`, extension co the luu truc tiep vao folder da chon |
+| Chrome Downloads API | Nếu chưa chọn folder, extension tải theo flow của Chrome |
+| Direct save | Nếu đã bấm `Choose Folder`, extension có thể lưu trực tiếp vào folder đã chọn |
 
-Luu y:
+Lưu ý:
 
-- Quyen folder co the can cap lai sau khi reload extension hoac khoi dong lai trinh duyet.
-- `Select Range` va `Unselect Range` ap dung tren danh sach dang hien thi sau filter/search.
+- Quyền folder có thể cần cấp lại sau khi reload extension hoặc khởi động lại trình duyệt.
+- `Select Range` và `Unselect Range` áp dụng trên danh sách đang hiển thị sau filter/search.
 
-### Cau truc project
+### Cấu trúc project
 
 ```text
 Douyin Video Downloader/
@@ -145,36 +145,36 @@ Douyin Video Downloader/
 └─ README.md
 ```
 
-### Vai tro tung file
+### Vai trò từng file
 
-| File | Vai tro |
+| File | Vai trò |
 | --- | --- |
-| `manifest.json` | Cau hinh extension MV3 |
+| `manifest.json` | Cấu hình extension MV3 |
 | `content.js` | UI, fetch API, filter, selection, save logic |
-| `background.js` | Queue download thong qua Chrome Downloads API |
-| `style.css` | Toan bo giao dien extension |
-| `QR.png` | Ma QR donate |
-| `icon*.png` | Icon toolbar cua extension |
+| `background.js` | Queue download bằng Chrome Downloads API |
+| `style.css` | Toàn bộ giao diện extension |
+| `QR.png` | Mã QR donate |
+| `icon*.png` | Icon toolbar của extension |
 
-### Tac gia va Donate
+### Tác giả và Donate
 
-| Muc | Thong tin |
+| Mục | Thông tin |
 | --- | --- |
-| Tac gia | Le Thanh Thai Duong |
-| Ngan hang | Vietcombank |
-| So tai khoan | `1016581189` |
-| Chu tai khoan | Le Thanh Thai Duong |
-| Zalo tac gia | https://zalo.me/0342252825 |
-| Nhom Zalo | Tram AI 4.0 - https://zalo.me/g/mkvsqm829 |
+| Tác giả | Le Thanh Thai Duong |
+| Ngân hàng | Vietcombank |
+| Số tài khoản | `1016581189` |
+| Chủ tài khoản | Le Thanh Thai Duong |
+| Zalo tác giả | https://zalo.me/0342252825 |
+| Nhóm Zalo | Tram AI 4.0 - https://zalo.me/g/mkvsqm829 |
 
-### Xu ly loi nhanh
+### Xử lý lỗi nhanh
 
-| Van de | Goi y |
+| Vấn đề | Gợi ý |
 | --- | --- |
-| Khong thay nut downloader | Refresh trang Douyin, sau do `Reload` extension |
-| Download khong chay | Kiem tra login Douyin, delay, quyen folder |
-| Save folder khong hoat dong | Bam `Choose Folder` lai va cap quyen read/write |
-| Dropdown bi che layer | `Reload` extension va refresh trang |
+| Không thấy nút downloader | Refresh trang Douyin, sau đó `Reload` extension |
+| Download không chạy | Kiểm tra login Douyin, delay, quyền folder |
+| Save folder không hoạt động | Bấm `Choose Folder` lại và cấp quyền read/write |
+| Dropdown bị che layer | `Reload` extension và refresh trang |
 
 ---
 

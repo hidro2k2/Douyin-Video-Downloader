@@ -596,6 +596,7 @@
         }
         this.renderTable();
         this.updateSelectionUi();
+        this.updateControlState();
       });
 
       this.ui.tableBody.addEventListener("change", (event) => {
@@ -614,6 +615,7 @@
         }
 
         this.updateSelectionUi();
+        this.updateControlState();
       });
 
       this.ui.modal.addEventListener("click", (event) => {

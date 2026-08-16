@@ -343,6 +343,27 @@ function cancelQueue(tabId) {
   return runQueueTask(tabId, () => cancelQueueUnlocked(tabId));
 }
 
+async function clearFinishedQueueUnlocked(tabId) {
+  const queue = await getQueue(tabId);
+  if (!queue) {
+    return { cleared: false };
+  }
+  if (queue.running) {
+    throw new Core.CoreError(
+      Core.ERROR_CODES.DOWNLOAD_QUEUE_ACTIVE,
+      "The active download queue cannot be cleared."
+    );
+  }
+
+  await clearAlarm(getAlarmName(tabId));
+  await queueStorageRemove(getQueueKey(tabId));
+  return { cleared: true };
+}
+
+function clearFinishedQueue(tabId) {
+  return runQueueTask(tabId, () => clearFinishedQueueUnlocked(tabId));
+}
+
 async function exportTextFile(payload) {
   const mimeType = payload?.mimeType || "text/plain;charset=utf-8";
   const content = typeof payload?.content === "string" ? payload.content : "";
@@ -920,6 +941,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     cancelQueue(tabId)
       .then((result) => sendResponse({ ok: true, result }))
       .catch((error) => sendResponse(createErrorResponse(error, Core.ERROR_CODES.DOWNLOAD_API_FAILED)));
+    return true;
+  }
+
+  if (message?.type === "CLEAR_FINISHED_QUEUE") {
+    if (typeof tabId !== "number") {
+      sendResponse(createErrorResponse(new Core.CoreError(
+        Core.ERROR_CODES.DOWNLOAD_API_FAILED,
+        "No active tab context for this refresh request."
+      )));
+      return false;
+    }
+    clearFinishedQueue(tabId)
+      .then((result) => sendResponse({ ok: true, result }))
+      .catch((error) => sendResponse(createErrorResponse(error, Core.ERROR_CODES.STORAGE_WRITE_FAILED)));
     return true;
   }
 

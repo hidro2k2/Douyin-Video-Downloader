@@ -668,12 +668,16 @@
                   <section class="dyex-settings-section">
                     <div class="dyex-settings-section-heading">
                       <h4>Download settings</h4>
-                      <p>Folder prefix and pacing for the download queue.</p>
+                      <p>Choose a subfolder inside Downloads and set the download queue pacing.</p>
                     </div>
-                    <div class="dyex-settings-grid">
+                    <div class="dyex-settings-grid dyex-download-settings-grid">
                       <label class="dyex-field dyex-folder-field">
-                        <span>File prefix</span>
-                        <input id="${CONFIG.FOLDER_INPUT_ID}" class="dyex-input dyex-folder-input" type="text" placeholder="douyin_downloads">
+                        <span>Save folder</span>
+                        <span class="dyex-folder-path-control">
+                          <span class="dyex-folder-root" aria-hidden="true">Downloads /</span>
+                          <input id="${CONFIG.FOLDER_INPUT_ID}" class="dyex-input dyex-folder-input" type="text" placeholder="douyin_downloads" aria-label="Save folder inside Downloads" autocomplete="off" spellcheck="false">
+                        </span>
+                        <small class="dyex-field-note">Use / to create subfolders. Videos and audios are organized automatically.</small>
                       </label>
                       <label class="dyex-field dyex-delay-field">
                         <span>Download delay</span>
@@ -863,7 +867,7 @@
       if (this.ui.modal.dataset.bound === "true") return;
       this.ui.modal.dataset.bound = "true";
 
-      this.ui.fetchButton.addEventListener("click", () => this.handleFetchVideos());
+      this.ui.fetchButton.addEventListener("click", () => this.handleFetchVideos({ resetFromStart: true }));
       this.ui.cancelButton.addEventListener("click", () => this.handleCancelQueue());
       this.ui.searchInput.addEventListener("input", () => this.handleFilterChange());
       this.ui.dateFromInput.addEventListener("change", () => this.handleFilterChange());
@@ -928,7 +932,7 @@
       this.ui.modal.addEventListener("click", (event) => {
         const retryButton = event.target.closest("[data-action='retry-fetch']");
         if (retryButton) {
-          this.handleFetchVideos();
+          this.handleFetchVideos({ resetFromStart: true });
           return;
         }
 
@@ -2019,6 +2023,36 @@
       }
     }
 
+    resetDownloadPresentation() {
+      this.lastProgressState = null;
+      this.setDownloadState("idle", { hydrate: true });
+      this.setTranslationState("idle", { hydrate: true });
+      this.ui.downloadProgress.hidden = true;
+      this.ui.downloadProgress.dataset.phase = "idle";
+      this.ui.downloadProgressBar.style.width = "0%";
+      this.ui.downloadProgressTitle.textContent = this.t("Preparing download...");
+      this.ui.downloadProgressDetail.textContent = "";
+      this.ui.downloadProgressStats.textContent = "";
+
+      const progressTrack = this.ui.downloadProgressBar.parentElement;
+      progressTrack?.setAttribute("aria-valuenow", "0");
+      progressTrack?.removeAttribute("aria-valuetext");
+    }
+
+    async clearFinishedQueueForRefresh() {
+      try {
+        const response = await sendRuntimeMessage({ type: "CLEAR_FINISHED_QUEUE" });
+        if (!response?.ok) {
+          throw new Core.CoreError(
+            response?.errorCode || Core.ERROR_CODES.STORAGE_WRITE_FAILED,
+            response?.error || "Failed to clear the finished download queue."
+          );
+        }
+      } catch (error) {
+        console.warn("Failed to clear finished queue before refresh:", error);
+      }
+    }
+
     async handleFetchVideos(options = {}) {
       if (this.isFetching || this.isDownloading) return;
 
@@ -2029,6 +2063,25 @@
       }
 
       this.currentSecUserId = secUserId;
+      const resetFromStart = Boolean(options.resetFromStart);
+      if (resetFromStart) {
+        await this.clearFinishedQueueForRefresh();
+        this.resetDownloadPresentation();
+        this.videos = [];
+        this.videoMap = new Map();
+        this.selectedIds.clear();
+        this.filters.scope = "all";
+        this.range.start = "";
+        this.range.end = "";
+        this.hasFetched = false;
+        this.fetchError = "";
+        this.lastUpdatedAt = null;
+        this.ui.filterScope.value = "all";
+        this.ui.rangeStartInput.value = "";
+        this.ui.rangeEndInput.value = "";
+        this.setFetchState("idle", { hydrate: true });
+      }
+
       const requestId = ++this.fetchRequestId;
       const abortController = new AbortController();
       this.fetchAbortController = abortController;

@@ -2,14 +2,14 @@
 
 Chrome Extension Manifest V3 giúp tự động lấy danh sách video từ trang cá nhân Douyin, lọc và chọn nội dung, tải hàng loạt video/audio, xuất metadata và tùy chọn dịch tên file bằng Gemini hoặc Groq.
 
-Phiên bản hiện tại: `1.5.0`
+Phiên bản hiện tại: `1.5.2`
 
 ## Tính năng nổi bật
 
 - Tự động fetch video khi mở hoặc chuyển sang một trang profile Douyin.
 - Icon download màu hồng xoay trong lúc tải dữ liệu.
 - Phân biệt rõ trạng thái đang tải, không có video và lỗi tải dữ liệu.
-- Mở downloader là thấy ngay dữ liệu đã tải; `Refresh` cập nhật lại trong nền.
+- Mở downloader là thấy ngay dữ liệu đã tải; `Refresh` xóa dữ liệu cũ và tải lại từ trang đầu tiên.
 - Hiển thị danh sách theo chế độ `List` hoặc `Grid`.
 - Tìm kiếm theo title/caption, lọc ngày đăng và video đã chọn.
 - Sắp xếp mới nhất, cũ nhất hoặc theo tên A–Z/Z–A.
@@ -98,14 +98,14 @@ Sau khi cập nhật source, bấm `Reload` tại `chrome://extensions` rồi re
 6. Bấm `Download` và chọn video, audio hoặc định dạng export.
 7. Theo dõi progress bar; dùng `Stop` để dừng queue đang chạy.
 
-`Refresh` chỉ cập nhật dữ liệu trong nền và không khóa toàn bộ giao diện.
+`Refresh` xóa lịch sử queue đã kết thúc, bỏ danh sách cũ và fetch lại từ cursor đầu tiên. Settings và các vùng không liên quan vẫn sử dụng được trong lúc tải.
 
 ## Settings
 
 | Thiết lập | Mô tả |
 | --- | --- |
 | Interface language | Đổi toàn bộ nhãn, nút, trạng thái, empty state và tiến trình giữa EN, VI, JP, KR hoặc CN; mặc định là EN |
-| File prefix | Thư mục/prefix dùng khi tạo đường dẫn và tên file |
+| Save folder | Thư mục con bên trong thư mục Downloads của trình duyệt; hỗ trợ nhiều cấp bằng dấu `/` |
 | Download delay | Khoảng nghỉ giữa hai file trong queue, tính bằng mili giây |
 | Translate | Bật/tắt dịch title trong filename |
 | Target language | Chọn VI, EN, JP, KR hoặc CN |
@@ -171,12 +171,14 @@ Audio:
 
 `<title>` là title do AI tạo nếu bật dịch; nếu tắt dịch hoặc thiếu kết quả dịch, extension fallback về caption/title gốc. Các ký tự không hợp lệ trong tên file được tự động loại bỏ.
 
+Ví dụ đặt `Save folder` là `Douyin/Technology`, video sẽ được lưu vào `Downloads/Douyin/Technology/videos`. Do giới hạn bảo mật của Chrome, extension không thể tự ghi vào một đường dẫn tuyệt đối tùy ý bên ngoài thư mục Downloads; vị trí Downloads gốc có thể đổi trong phần cài đặt tải xuống của trình duyệt.
+
 ## Trạng thái giao diện
 
 - Lần tải đầu hiển thị skeleton thay vì màn hình trống.
 - Profile không có video hiển thị empty state riêng.
 - Lỗi API hiển thị nút thử lại.
-- Refresh nền giữ nguyên danh sách hiện tại cho đến khi dữ liệu mới sẵn sàng.
+- Refresh thủ công hiển thị skeleton và dựng lại danh sách từ cursor đầu tiên.
 - Settings drawer luôn được render ngoài màn hình và dùng `translate3d` để mở mượt, tránh giật layout.
 - Giao diện không dùng thanh hành động cố định khi cuộn danh sách video.
 

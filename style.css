@@ -634,6 +634,64 @@
   width: 220px;
 }
 
+.dyex-download-settings-grid {
+  grid-template-columns: minmax(0, 1.45fr) minmax(130px, 0.55fr);
+  align-items: start;
+}
+
+.dyex-folder-path-control {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dfe5ee;
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dyex-folder-path-control:focus-within {
+  border-color: #ff5a80;
+  box-shadow: 0 0 0 3px rgba(254, 44, 85, 0.12);
+}
+
+.dyex-folder-root {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0 10px;
+  border-right: 1px solid #edf0f5;
+  background: #fff6f8;
+  color: #e83f68;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.dyex-folder-path-control .dyex-folder-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.dyex-folder-path-control .dyex-folder-input:focus {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.dyex-field-note {
+  color: #8a95a6;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-transform: none;
+}
+
 .dyex-delay-control {
   position: relative;
   display: flex;
@@ -1947,6 +2005,10 @@
 
   .dyex-delay-field {
     flex: 1 1 calc(35% - 6px);
+  }
+
+  .dyex-download-settings-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .dyex-range-group {

@@ -1,135 +1,179 @@
 # Douyin User Video Downloader
 
-A Chrome Extension Manifest V3 for fetching, previewing, filtering, and batch-downloading videos from Douyin user profile pages.
+Chrome Extension Manifest V3 giúp tự động lấy danh sách video từ trang cá nhân Douyin, lọc và chọn nội dung, tải hàng loạt video/audio, xuất metadata và tùy chọn dịch tên file bằng Gemini hoặc Groq.
 
-## Overview
+Phiên bản hiện tại: `1.3.2`
 
-| Item | Value |
+## Tính năng nổi bật
+
+- Tự động fetch video khi mở hoặc chuyển sang một trang profile Douyin.
+- Icon download màu hồng xoay trong lúc tải dữ liệu.
+- Phân biệt rõ trạng thái đang tải, không có video và lỗi tải dữ liệu.
+- Mở downloader là thấy ngay dữ liệu đã tải; `Refresh` cập nhật lại trong nền.
+- Hiển thị danh sách theo chế độ `List` hoặc `Grid`.
+- Tìm kiếm theo title/caption, lọc ngày đăng và video đã chọn.
+- Sắp xếp mới nhất, cũ nhất hoặc theo tên A–Z/Z–A.
+- Chọn tất cả hoặc chọn/bỏ chọn theo khoảng số thứ tự.
+- Tải hàng loạt MP4/MP3 và xuất JSON/TXT/CSV.
+- Hiển thị tiến trình, tên file hiện tại, phần trăm thành công/lỗi và cho phép dừng queue.
+- Ghi nhớ bộ lọc, cách sắp xếp, Grid/List, định dạng tải gần nhất và các thiết lập download.
+- Responsive cho màn hình nhỏ.
+- Settings drawer trượt mượt từ phải sang trái, không chiếm diện tích khi xem video.
+- Popup donate được tích hợp trong header.
+
+## Dịch tên file bằng AI
+
+Extension có thể dịch hoặc viết lại phần title trong tên file trước khi download. Nội dung title/caption hiển thị trong danh sách và metadata gốc không bị thay đổi.
+
+### Ngôn ngữ hỗ trợ
+
+| Mã | Ngôn ngữ |
 | --- | --- |
-| Project | Douyin User Video Downloader |
-| Platform | Chrome Extension (Manifest V3) |
-| Supported URL | `https://www.douyin.com/user/*` |
-| Tech | JavaScript, CSS, Chrome Downloads API |
-| Mode | Client-side only, no backend |
-| Author | Le Thanh Thai Duong |
+| `VI` | Tiếng Việt |
+| `EN` | English |
+| `JP` | 日本語 |
+| `KR` | 한국어 |
+| `CN` | 中文 giản thể |
 
----
+Khi chọn tiếng Việt, prompt được tối ưu để tạo tiêu đề tự nhiên và thu hút cho nội dung reup từ Trung Quốc, phù hợp với nhiều nhóm video như hoạt hình, review sản phẩm, review phim, giải trí, công nghệ, kịch, nhiếp ảnh, kiến thức, khoa học, ẩm thực và đời sống. Tiêu đề vẫn phải giữ đúng ý chính và không bịa thêm dữ kiện.
 
-## Tiếng Việt
+### Provider và API key
 
-### Giới thiệu
+- Hỗ trợ `Gemini`, `Groq` hoặc `Auto`.
+- Chế độ `Auto` ưu tiên Gemini rồi fallback sang Groq.
+- Có thể nhập nhiều API key, mỗi dòng một key.
+- Khi một key gặp lỗi quota, rate limit hoặc xác thực, extension tự chuyển sang key tiếp theo.
+- Có thể bật/tắt dịch. Khi tắt, filename sử dụng title Douyin gốc.
+- API key được lưu trong `chrome.storage.local` của extension.
+- Mặc định Settings chỉ hiển thị số lượng key. Key được nạp tạm vào textarea khi bấm `Show keys` và bị xóa khỏi DOM khi ẩn hoặc đóng Settings.
+- Dữ liệu dịch được gửi trực tiếp từ extension tới provider đã chọn, không qua backend riêng của dự án.
 
-`Douyin User Video Downloader` là extension Chrome giúp lấy toàn bộ video từ trang profile Douyin, hiển thị danh sách để chọn, lọc, tìm kiếm, export metadata và tải hàng loạt.
+### Model Gemini
 
-Extension hiện tại tập trung vào 4 mục tiêu:
-
-| Mục tiêu | Mô tả |
+| Model | Trạng thái trong extension |
 | --- | --- |
-| Fetch toàn bộ video | Lấy video qua API Douyin theo phân trang |
-| Quản lý danh sách | Search, lọc theo ngày, select range, unselect range |
-| Batch download | Download video/audio, export JSON/TXT/CSV |
-| Lưu file linh hoạt | Dùng Chrome Downloads API hoặc chọn folder để lưu trực tiếp |
+| `gemini-3.6-flash` | Mặc định, khuyến nghị |
+| `gemini-3.5-flash` | Có thể chọn |
+| `gemini-3.5-flash-lite` | Có thể chọn, ưu tiên tốc độ |
+| `gemini-2.5-flash` | Có thể chọn, model cũ |
+| Gemini 2.0/1.5 | Hiển thị để tham khảo nhưng bị khóa vì đã ngừng hoạt động |
 
-### Tính năng chính
+### Model Groq
 
-| Nhóm tính năng | Chi tiết |
+| Model | Trạng thái trong extension |
 | --- | --- |
-| UI Downloader | Chèn nút download nhỏ ngay trên profile Douyin, mở modal ở giữa màn hình |
-| Fetch API | Tự lấy `sec_user_id`, gọi API Douyin, retry + delay để ổn định hơn |
-| Hiển thị video | Cover, title, caption, date, link Video/Audio |
-| Search và filter | Tìm theo `title` / `caption`, lọc ngày `from` / `to` |
-| Chọn video | Checkbox từng dòng, `Select All`, `Select Range`, `Unselect Range` |
-| Download | MP4, MP3, JSON, TXT, CSV |
-| Queue control | Có nút `Stop` để dừng download đang chạy |
-| Save mode | Chọn folder trực tiếp bằng `Choose Folder` hoặc dùng flow tải file của Chrome |
-| Settings | Nhớ `File prefix` và `Delay (ms)` bằng `chrome.storage` |
-| Donate | Popup donate nhỏ trong header, giữ UI đồng bộ |
+| `openai/gpt-oss-120b` | Mặc định, khuyến nghị |
+| `openai/gpt-oss-20b` | Có thể chọn, ưu tiên tốc độ |
+| `qwen/qwen3.6-27b` | Có thể chọn, preview |
+| `llama-3.3-70b-versatile` | Legacy, phụ thuộc quyền tài khoản Enterprise |
+| Mixtral 8x7B/Gemma2 9B | Hiển thị để tham khảo nhưng bị khóa vì đã ngừng hoạt động |
 
-### Cài đặt
+Danh sách model của provider có thể thay đổi theo thời gian. Tham khảo [Gemini model lifecycle](https://ai.google.dev/gemini-api/docs/deprecations) và [Groq model deprecations](https://console.groq.com/docs/deprecations) trước khi phát hành phiên bản mới.
 
-| Bước | Thao tác |
+## Cài đặt
+
+1. Tải source code hoặc clone repository.
+2. Mở `chrome://extensions`.
+3. Bật `Developer mode`.
+4. Chọn `Load unpacked`.
+5. Chọn thư mục chứa `manifest.json`.
+6. Mở hoặc refresh một trang `https://www.douyin.com/user/*`.
+
+Sau khi cập nhật source, bấm `Reload` tại `chrome://extensions` rồi refresh lại trang Douyin. Chrome có thể yêu cầu xác nhận quyền kết nối Gemini/Groq khi manifest thay đổi.
+
+## Cách sử dụng
+
+1. Đăng nhập Douyin và mở trang profile cần tải.
+2. Extension tự động fetch toàn bộ video theo phân trang.
+3. Bấm icon download màu hồng cạnh khu vực tab video để mở downloader.
+4. Tìm kiếm, lọc, sắp xếp và chọn các video cần tải.
+5. Nếu cần, mở icon sliders màu hồng trong header để cấu hình Settings.
+6. Bấm `Download` và chọn video, audio hoặc định dạng export.
+7. Theo dõi progress bar; dùng `Stop` để dừng queue đang chạy.
+
+`Refresh` chỉ cập nhật dữ liệu trong nền và không khóa toàn bộ giao diện.
+
+## Settings
+
+| Thiết lập | Mô tả |
 | --- | --- |
-| 1 | Mở `chrome://extensions` |
-| 2 | Bật `Developer mode` |
-| 3 | Bấm `Load unpacked` |
-| 4 | Chọn thư mục project này |
-| 5 | Sau mỗi lần sửa code, bấm `Reload` |
+| File prefix | Thư mục/prefix dùng khi tạo đường dẫn và tên file |
+| Download delay | Khoảng nghỉ giữa hai file trong queue, tính bằng mili giây |
+| Translate | Bật/tắt dịch title trong filename |
+| Target language | Chọn VI, EN, JP, KR hoặc CN |
+| AI provider | Chọn Auto, Gemini hoặc Groq |
+| Gemini model | Chọn model dùng cho Gemini |
+| Groq model | Chọn model dùng cho Groq |
+| Gemini API keys | Nhiều key, mỗi dòng một key |
+| Groq API keys | Nhiều key, mỗi dòng một key |
+| Show keys | Tạm hiện key đã lưu hoặc key đang nhập; tự ẩn khi đóng Settings |
 
-### Cách dùng
+## Công cụ quản lý video
 
-1. Mở trang profile Douyin theo mẫu `https://www.douyin.com/user/*`.
-2. Bấm icon download nhỏ ở khu vực tab video.
-3. Trong modal, bấm `Fetch Videos`.
-4. Nếu cần, dùng các công cụ lọc:
-
-| Công cụ | Tác dụng |
+| Công cụ | Chức năng |
 | --- | --- |
-| Search | Tìm theo `title` hoặc `caption` |
-| Date From / Date To | Lọc theo ngày tạo video |
-| Select Range | Chọn theo số thứ tự đang hiển thị |
-| Unselect Range | Bỏ chọn theo số thứ tự đang hiển thị |
-| Select All | Chọn tất cả video đang hiển thị |
-| Reset Filters | Xóa search và filter ngày |
+| Search | Tìm theo title hoặc caption |
+| Date posted | Lọc theo ngày bắt đầu và kết thúc |
+| Show | Hiển thị tất cả hoặc chỉ video đã chọn |
+| Sort | Sắp xếp mới nhất, cũ nhất hoặc theo title |
+| Select All | Chọn toàn bộ video đang hiển thị |
+| Select Range | Chọn một khoảng số thứ tự |
+| Unselect Range | Bỏ chọn một khoảng số thứ tự |
+| Reset Filters | Xóa search và bộ lọc ngày |
+| List/Grid | Chuyển chế độ hiển thị |
 
-5. Đặt `File prefix` nếu muốn đổi phần đầu tên file.
-6. Đặt `Delay (ms)` nếu muốn download chậm hơn hoặc nhanh hơn.
-7. Nếu muốn lưu vào một thư mục cụ thể, bấm `Choose Folder`.
-8. Bấm `Download` và chọn loại file cần tải.
-9. Nếu cần dừng giữa chừng, bấm `Stop`.
+`Select Range` và `Unselect Range` áp dụng trên danh sách hiện đang hiển thị sau khi lọc và sắp xếp.
 
-### Giải thích giao diện
+## Download và export
 
-| Thành phần | Ý nghĩa |
+| Hành động | Kết quả |
 | --- | --- |
-| Fetch Videos | Lấy toàn bộ video từ profile |
-| Download | Mở menu download/export |
-| Stop | Dừng queue download đang chạy |
-| File prefix | Đặt tiền tố cho tên file |
-| Choose Folder | Chọn thư mục lưu trực tiếp |
-| Delay (ms) | Độ trễ giữa các file trong queue |
-| Title / Caption | Hiển thị title và caption lấy từ API |
+| Download Selected Videos | Tải video MP4 |
+| Download Selected Audios | Tải audio MP3 |
+| Export Metadata JSON | Xuất metadata đầy đủ của video đã chọn |
+| Export Links TXT | Xuất danh sách link video, mỗi dòng một link |
+| Export CSV | Xuất bảng metadata để dùng với Excel/Google Sheets |
 
-### Đặt tên file
+Queue download chạy trong background service worker nên vẫn giữ được trạng thái khi đóng/mở modal. File được tải bằng Chrome Downloads API với `conflictAction: uniquify` để tránh ghi đè file trùng tên.
 
-Input `File prefix` được dùng làm phần đầu của tên file.
+## Quy tắc đặt tên file
 
-Ví dụ:
+Video:
 
 ```text
-douyin_downloads_caption-video_2026-03-29_123456789.mp4
-caucaTV_caption-video_2026-03-29_123456789.mp3
+<file-prefix>/videos/<prefix>_<title>_<YYYY-MM-DD>_<aweme-id>.mp4
 ```
 
-Quy tắc:
+Audio:
 
-| Phần | Nguồn |
+```text
+<file-prefix>/audios/<prefix>_<title>_<YYYY-MM-DD>_<aweme-id>.mp3
+```
+
+`<title>` là title do AI tạo nếu bật dịch; nếu tắt dịch hoặc thiếu kết quả dịch, extension fallback về caption/title gốc. Các ký tự không hợp lệ trong tên file được tự động loại bỏ.
+
+## Trạng thái giao diện
+
+- Lần tải đầu hiển thị skeleton thay vì màn hình trống.
+- Profile không có video hiển thị empty state riêng.
+- Lỗi API hiển thị nút thử lại.
+- Refresh nền giữ nguyên danh sách hiện tại cho đến khi dữ liệu mới sẵn sàng.
+- Settings drawer luôn được render ngoài màn hình và dùng `translate3d` để mở mượt, tránh giật layout.
+- Giao diện không dùng thanh hành động cố định khi cuộn danh sách video.
+
+## Quyền extension
+
+| Quyền | Mục đích |
 | --- | --- |
-| Prefix | Lấy từ input `File prefix` |
-| Nội dung tên | Ưu tiên `caption`, fallback sang `title` |
-| Date | `YYYY-MM-DD` |
-| ID | `aweme_id` của video |
+| `downloads` | Tải media và file export |
+| `storage` | Lưu Settings, API key và trạng thái queue |
+| `activeTab`, `scripting` | Hoạt động trên trang Douyin hiện tại |
+| `alarms` | Điều phối khoảng nghỉ giữa các file trong queue |
+| `https://*.douyin.com/*` | Fetch dữ liệu profile Douyin |
+| `https://generativelanguage.googleapis.com/*` | Gọi Gemini API khi bật dịch |
+| `https://api.groq.com/*` | Gọi Groq API khi bật dịch |
 
-### Export dữ liệu
-
-| Định dạng | Nội dung |
-| --- | --- |
-| JSON | Full metadata của video đã chọn |
-| TXT | Danh sách link video, mỗi dòng 1 link |
-| CSV | Metadata dạng bảng, để mở bằng Excel/Sheets |
-
-### Save mode
-
-| Cách lưu | Mô tả |
-| --- | --- |
-| Chrome Downloads API | Nếu chưa chọn folder, extension tải theo flow của Chrome |
-| Direct save | Nếu đã bấm `Choose Folder`, extension có thể lưu trực tiếp vào folder đã chọn |
-
-Lưu ý:
-
-- Quyền folder có thể cần cấp lại sau khi reload extension hoặc khởi động lại trình duyệt.
-- `Select Range` và `Unselect Range` áp dụng trên danh sách đang hiển thị sau filter/search.
-
-### Cấu trúc project
+## Cấu trúc dự án
 
 ```text
 Douyin Video Downloader/
@@ -137,6 +181,7 @@ Douyin Video Downloader/
 ├─ content.js
 ├─ background.js
 ├─ style.css
+├─ Douyin User Video Downloader.user.js
 ├─ QR.png
 ├─ icon16.png
 ├─ icon32.png
@@ -144,205 +189,41 @@ Douyin Video Downloader/
 ├─ icon128.png
 └─ README.md
 ```
-
-### Vai trò từng file
 
 | File | Vai trò |
 | --- | --- |
-| `manifest.json` | Cấu hình extension MV3 |
-| `content.js` | UI, fetch API, filter, selection, save logic |
-| `background.js` | Queue download bằng Chrome Downloads API |
-| `style.css` | Toàn bộ giao diện extension |
-| `QR.png` | Mã QR donate |
-| `icon*.png` | Icon toolbar của extension |
+| `manifest.json` | Cấu hình Chrome Extension Manifest V3 |
+| `content.js` | UI, fetch Douyin, filter, selection và chuẩn bị download |
+| `background.js` | Queue download, gọi Gemini/Groq và xoay API key |
+| `style.css` | Giao diện responsive và animation |
+| `Douyin User Video Downloader.user.js` | Bản userscript standalone cũ, chưa có Settings AI mới |
+| `QR.png` | QR donate |
+| `icon*.png` | Icon extension |
 
-### Tác giả và Donate
+> Phiên bản được khuyến nghị là Chrome Extension từ `manifest.json`. File `.user.js` là bản legacy và không đồng bộ đầy đủ các tính năng mới.
 
-| Mục | Thông tin |
+## Xử lý lỗi nhanh
+
+| Vấn đề | Cách xử lý |
 | --- | --- |
-| Tác giả | Le Thanh Thai Duong |
-| Ngân hàng | Vietcombank |
-| Số tài khoản | `1016581189` |
-| Chủ tài khoản | Le Thanh Thai Duong |
-| Zalo tác giả | https://zalo.me/0342252825 |
-| Nhóm Zalo | Tram AI 4.0 - https://zalo.me/g/mkvsqm829 |
+| Không thấy icon downloader | Đảm bảo đang ở URL `/user/*`, reload extension và refresh Douyin |
+| Video không tự tải | Kiểm tra đăng nhập Douyin rồi bấm `Refresh` |
+| Dịch tên file thất bại | Kiểm tra API key, provider, model và quota |
+| Nhiều Gemini key vẫn hết quota | Các key cùng Google project có thể dùng chung quota; thử Groq hoặc Auto |
+| Model trả lỗi 404/400 | Model có thể đã bị provider ngừng hỗ trợ; chọn model mặc định |
+| Download bị gián đoạn | Tăng Download delay và thử lại với số lượng video nhỏ hơn |
+| UI chưa cập nhật | Reload extension tại `chrome://extensions` và refresh tab Douyin |
 
-### Xử lý lỗi nhanh
+## Tác giả và hỗ trợ
 
-| Vấn đề | Gợi ý |
-| --- | --- |
-| Không thấy nút downloader | Refresh trang Douyin, sau đó `Reload` extension |
-| Download không chạy | Kiểm tra login Douyin, delay, quyền folder |
-| Save folder không hoạt động | Bấm `Choose Folder` lại và cấp quyền read/write |
-| Dropdown bị che layer | `Reload` extension và refresh trang |
+- Tác giả: Le Thanh Thai Duong
+- Zalo: <https://zalo.me/0342252825>
+- Nhóm Tram AI 4.0: <https://zalo.me/g/mkvsqm829>
+- Vietcombank: `1016581189` — Le Thanh Thai Duong
 
----
+## Lưu ý
 
-## English
-
-### Introduction
-
-`Douyin User Video Downloader` is a Chrome Extension built to fetch all videos from a Douyin user profile, display them in a selection UI, and support batch downloads and metadata export.
-
-It focuses on 4 main goals:
-
-| Goal | Description |
-| --- | --- |
-| Fetch all videos | Load videos from the Douyin API with pagination |
-| Manage selection | Search, date filtering, range selection, unselect range |
-| Batch download | Download video/audio and export JSON/TXT/CSV |
-| Flexible saving | Use Chrome Downloads API or direct-save into a chosen folder |
-
-### Main features
-
-| Feature group | Details |
-| --- | --- |
-| Downloader UI | Injects a small downloader trigger into the Douyin profile page |
-| API fetch | Automatically reads `sec_user_id`, calls Douyin API, retries with delay |
-| Video list | Cover, title, caption, date, Video/Audio links |
-| Search and filtering | Search by `title` / `caption`, filter by date range |
-| Selection tools | Row checkbox, `Select All`, `Select Range`, `Unselect Range` |
-| Download actions | MP4, MP3, JSON, TXT, CSV |
-| Queue control | Includes `Stop` to stop active downloads |
-| Save mode | Direct folder save with `Choose Folder` or default Chrome download flow |
-| Persistent settings | Saves `File prefix` and `Delay (ms)` with `chrome.storage` |
-| Author support | Donation popup integrated into the header |
-
-### Installation
-
-| Step | Action |
-| --- | --- |
-| 1 | Open `chrome://extensions` |
-| 2 | Enable `Developer mode` |
-| 3 | Click `Load unpacked` |
-| 4 | Select this project folder |
-| 5 | Click `Reload` whenever the code changes |
-
-### How to use
-
-1. Open a Douyin profile page matching `https://www.douyin.com/user/*`.
-2. Click the small downloader icon near the video/profile tab area.
-3. Click `Fetch Videos`.
-4. Use the available tools when needed:
-
-| Tool | Purpose |
-| --- | --- |
-| Search | Search by `title` or `caption` |
-| Date From / Date To | Filter by video create date |
-| Select Range | Select videos by visible row number |
-| Unselect Range | Unselect videos by visible row number |
-| Select All | Select all currently visible videos |
-| Reset Filters | Clear search and date filters |
-
-5. Set `File prefix` if you want a custom filename prefix.
-6. Set `Delay (ms)` if you want slower or faster downloads.
-7. Click `Choose Folder` if you want a custom destination folder.
-8. Click `Download` and choose the action you need.
-9. Click `Stop` if you want to stop the active job.
-
-### UI reference
-
-| Component | Purpose |
-| --- | --- |
-| Fetch Videos | Fetch all videos from the current profile |
-| Download | Opens the download/export menu |
-| Stop | Stops the active queue |
-| File prefix | Sets the filename prefix |
-| Choose Folder | Selects a direct-save folder |
-| Delay (ms) | Sets delay between downloaded files |
-| Title / Caption | Shows API-based title and caption |
-
-### Filename format
-
-The `File prefix` input is used as the start of each filename.
-
-Examples:
-
-```text
-douyin_downloads_video-caption_2026-03-29_123456789.mp4
-caucaTV_video-caption_2026-03-29_123456789.mp3
-```
-
-Rules:
-
-| Part | Source |
-| --- | --- |
-| Prefix | Value from `File prefix` |
-| Main text | `caption` first, fallback to `title` |
-| Date | `YYYY-MM-DD` |
-| ID | Douyin `aweme_id` |
-
-### Export formats
-
-| Format | Content |
-| --- | --- |
-| JSON | Full selected video metadata |
-| TXT | Video links, one per line |
-| CSV | Table-style metadata for Excel or Google Sheets |
-
-### Save modes
-
-| Mode | Description |
-| --- | --- |
-| Chrome download flow | Used when no folder is explicitly chosen |
-| Direct save | Used after `Choose Folder`, saves directly into the selected folder |
-
-Notes:
-
-- Folder permissions may need to be granted again after extension reload or browser restart.
-- `Select Range` and `Unselect Range` work on the currently visible list after filtering/searching.
-
-### Project structure
-
-```text
-Douyin Video Downloader/
-├─ manifest.json
-├─ content.js
-├─ background.js
-├─ style.css
-├─ QR.png
-├─ icon16.png
-├─ icon32.png
-├─ icon48.png
-├─ icon128.png
-└─ README.md
-```
-
-### File responsibilities
-
-| File | Purpose |
-| --- | --- |
-| `manifest.json` | MV3 extension configuration |
-| `content.js` | UI, API fetch, filtering, selection, and save logic |
-| `background.js` | Background queue management with Chrome Downloads API |
-| `style.css` | Extension styling |
-| `QR.png` | Donation QR image |
-| `icon*.png` | Extension toolbar icons |
-
-### Author and donation
-
-| Item | Value |
-| --- | --- |
-| Author | Le Thanh Thai Duong |
-| Bank | Vietcombank |
-| Account number | `1016581189` |
-| Account name | Le Thanh Thai Duong |
-| Author Zalo | https://zalo.me/0342252825 |
-| Zalo group | Tram AI 4.0 - https://zalo.me/g/mkvsqm829 |
-
-### Quick troubleshooting
-
-| Problem | Suggestion |
-| --- | --- |
-| Downloader button does not appear | Refresh Douyin page and reload the extension |
-| Downloads do not start | Check login state, delay value, and folder permission |
-| Direct save does not work | Click `Choose Folder` again and re-grant permission |
-| Dropdown layering issue | Reload the extension and refresh the page |
-
----
-
-## Notes
-
-- This project is intended for browser-side personal workflow automation.
-- Douyin UI selectors and API structures may change over time.
-- If Douyin updates its frontend or API, some selectors or fields may need to be adjusted.
+- Chỉ sử dụng với nội dung bạn có quyền tải và tuân thủ điều khoản của Douyin.
+- Douyin có thể thay đổi giao diện hoặc API, khiến selector và cấu trúc dữ liệu cần được cập nhật.
+- API Gemini/Groq có quota và chi phí riêng; người dùng tự quản lý API key và tài khoản provider.
+- Dự án không có backend riêng và không thu thập API key.

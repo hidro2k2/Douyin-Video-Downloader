@@ -35,6 +35,18 @@
   font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+#dyex-modal[lang="vi-VN"] .dyex-shell,
+#dyex-modal[lang="vi-VN"] button,
+#dyex-modal[lang="vi-VN"] input,
+#dyex-modal[lang="vi-VN"] select,
+#dyex-modal[lang="vi-VN"] textarea {
+  font-family: "Roboto", "Segoe UI", Arial, sans-serif;
+}
+
+#dyex-modal[lang="vi-VN"] .dyex-api-keys {
+  font-family: "Cascadia Mono", Consolas, monospace;
+}
+
 .dyex-header {
   display: flex;
   align-items: center;

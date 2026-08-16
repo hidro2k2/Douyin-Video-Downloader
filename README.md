@@ -2,7 +2,7 @@
 
 Chrome Extension Manifest V3 giúp tự động lấy danh sách video từ trang cá nhân Douyin, lọc và chọn nội dung, tải hàng loạt video/audio, xuất metadata và tùy chọn dịch tên file bằng Gemini hoặc Groq.
 
-Phiên bản hiện tại: `1.3.2`
+Phiên bản hiện tại: `1.4.1`
 
 ## Tính năng nổi bật
 
@@ -18,6 +18,7 @@ Phiên bản hiện tại: `1.3.2`
 - Hiển thị tiến trình, tên file hiện tại, phần trăm thành công/lỗi và cho phép dừng queue.
 - Ghi nhớ bộ lọc, cách sắp xếp, Grid/List, định dạng tải gần nhất và các thiết lập download.
 - Responsive cho màn hình nhỏ.
+- Có thể đổi toàn bộ ngôn ngữ giao diện giữa English, Tiếng Việt, 日本語, 한국어 và 简体中文; mặc định lần đầu là English.
 - Settings drawer trượt mượt từ phải sang trái, không chiếm diện tích khi xem video.
 - Popup donate được tích hợp trong header.
 
@@ -97,6 +98,7 @@ Sau khi cập nhật source, bấm `Reload` tại `chrome://extensions` rồi re
 
 | Thiết lập | Mô tả |
 | --- | --- |
+| Interface language | Đổi toàn bộ nhãn, nút, trạng thái, empty state và tiến trình giữa EN, VI, JP, KR hoặc CN; mặc định là EN |
 | File prefix | Thư mục/prefix dùng khi tạo đường dẫn và tên file |
 | Download delay | Khoảng nghỉ giữa hai file trong queue, tính bằng mili giây |
 | Translate | Bật/tắt dịch title trong filename |

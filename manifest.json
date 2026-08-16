@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Douyin User Video Downloader",
-  "version": "1.3.2",
+  "version": "1.4.1",
   "description": "Batch download Douyin media with optional AI-translated filenames.",
   "permissions": [
     "downloads",

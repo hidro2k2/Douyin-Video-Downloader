@@ -2,7 +2,7 @@
 
 Chrome Extension Manifest V3 giúp tự động lấy danh sách video từ trang cá nhân Douyin, lọc và chọn nội dung, tải hàng loạt video/audio, xuất metadata và tùy chọn dịch tên file bằng Gemini hoặc Groq.
 
-Phiên bản hiện tại: `1.4.1`
+Phiên bản hiện tại: `1.5.0`
 
 ## Tính năng nổi bật
 
@@ -21,6 +21,10 @@ Phiên bản hiện tại: `1.4.1`
 - Có thể đổi toàn bộ ngôn ngữ giao diện giữa English, Tiếng Việt, 日本語, 한국어 và 简体中文; mặc định lần đầu là English.
 - Settings drawer trượt mượt từ phải sang trái, không chiếm diện tích khi xem video.
 - Popup donate được tích hợp trong header.
+- Cache kết quả dịch theo video, nội dung, ngôn ngữ và model để giảm số lần gọi API.
+- Theo dõi sức khỏe API key, tự cooldown key bị rate limit/hết quota và bỏ qua key không hợp lệ.
+- Download queue có checkpoint và tự khôi phục sau khi service worker hoặc Chrome khởi động lại.
+- Settings và queue có schema version để tự migration dữ liệu từ phiên bản cũ.
 
 ## Dịch tên file bằng AI
 
@@ -44,6 +48,8 @@ Khi chọn tiếng Việt, prompt được tối ưu để tạo tiêu đề t�
 - Chế độ `Auto` ưu tiên Gemini rồi fallback sang Groq.
 - Có thể nhập nhiều API key, mỗi dòng một key.
 - Khi một key gặp lỗi quota, rate limit hoặc xác thực, extension tự chuyển sang key tiếp theo.
+- Key lỗi được nhận diện bằng fingerprint, lưu trạng thái health/cooldown cục bộ và không bị thử lại liên tục.
+- Kết quả dịch đã dùng được cache tối đa 90 ngày; cache không chứa API key.
 - Có thể bật/tắt dịch. Khi tắt, filename sử dụng title Douyin gốc.
 - API key được lưu trong `chrome.storage.local` của extension.
 - Mặc định Settings chỉ hiển thị số lượng key. Key được nạp tạm vào textarea khi bấm `Show keys` và bị xóa khỏi DOM khi ẩn hoặc đóng Settings.
@@ -138,6 +144,17 @@ Sau khi cập nhật source, bấm `Reload` tại `chrome://extensions` rồi re
 
 Queue download chạy trong background service worker nên vẫn giữ được trạng thái khi đóng/mở modal. File được tải bằng Chrome Downloads API với `conflictAction: uniquify` để tránh ghi đè file trùng tên.
 
+Queue được checkpoint sau mỗi thay đổi vào `chrome.storage.local`. Khi Chrome khởi động lại, extension đối chiếu download đang hoạt động, tiếp tục item kế tiếp và tránh tải lại những item đã hoàn tất.
+
+## Độ ổn định của phần lõi
+
+- State machine riêng cho fetch, dịch filename và download giúp ngăn chuyển trạng thái không hợp lệ.
+- Adapter Douyin kiểm tra schema response và gom toàn bộ mapping dữ liệu API vào một lớp lõi.
+- Retry fetch dùng exponential backoff kèm jitter và không retry lỗi phiên đăng nhập/schema.
+- Lỗi lõi có mã ổn định như `DOUYIN_RATE_LIMITED`, `AI_QUOTA_EXHAUSTED`, `AI_KEY_INVALID`, `DOWNLOAD_INTERRUPTED` và `DOWNLOAD_RECOVERY_SKIPPED`.
+- Settings schema `v2` tự làm sạch giá trị cũ mà vẫn giữ API key, bộ lọc và lựa chọn người dùng.
+- Queue schema `v2` tự migrate checkpoint cũ từ `chrome.storage.session` sang `chrome.storage.local`.
+
 ## Quy tắc đặt tên file
 
 Video:
@@ -180,6 +197,9 @@ Audio:
 ```text
 Douyin Video Downloader/
 ├─ manifest.json
+├─ core.js
+├─ locales.js
+├─ background-core.js
 ├─ content.js
 ├─ background.js
 ├─ style.css
@@ -195,8 +215,11 @@ Douyin Video Downloader/
 | File | Vai trò |
 | --- | --- |
 | `manifest.json` | Cấu hình Chrome Extension Manifest V3 |
-| `content.js` | UI, fetch Douyin, filter, selection và chuẩn bị download |
-| `background.js` | Queue download, gọi Gemini/Groq và xoay API key |
+| `core.js` | State machine, error codes, migration Settings và adapter dữ liệu Douyin |
+| `locales.js` | Toàn bộ từ điển và locale EN/VI/JP/KR/CN |
+| `background-core.js` | Cache dịch, health/cooldown API key và schema queue |
+| `content.js` | UI, filter, selection và điều phối các module lõi |
+| `background.js` | Service worker điều phối queue, phục hồi download và gọi Gemini/Groq |
 | `style.css` | Giao diện responsive và animation |
 | `Douyin User Video Downloader.user.js` | Bản userscript standalone cũ, chưa có Settings AI mới |
 | `QR.png` | QR donate |

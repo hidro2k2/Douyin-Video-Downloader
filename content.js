@@ -1,6 +1,9 @@
 (function () {
   "use strict";
 
+  const Core = globalThis.DYEXCore;
+  if (!Core) throw new Error("DYEXCore is unavailable.");
+
   if (window.__DOUYIN_DOWNLOADER_EXTENSION__) {
     return;
   }
@@ -82,733 +85,9 @@
     }
   };
 
-  const UI_LOCALES = {
-    EN: "en-US",
-    VI: "vi-VN",
-    JP: "ja-JP",
-    KR: "ko-KR",
-    CN: "zh-CN"
-  };
-
-  const UI_TRANSLATIONS = {
-    VI: {
-      "Ready.": "Sẵn sàng.",
-      "Preparing download...": "Đang chuẩn bị tải xuống...",
-      "Select All (": "Chọn tất cả (",
-      "Download": "Tải xuống",
-      "Stop": "Dừng",
-      "Download Selected Videos": "Tải video đã chọn",
-      "Download Selected Audios": "Tải audio đã chọn",
-      "Export Metadata JSON": "Xuất metadata JSON",
-      "Export Links TXT": "Xuất liên kết TXT",
-      "Export CSV": "Xuất CSV",
-      "Video layout": "Kiểu hiển thị video",
-      "List view": "Dạng danh sách",
-      "Grid view": "Dạng lưới",
-      "Refresh": "Làm mới",
-      "Refreshing...": "Đang làm mới...",
-      "Search": "Tìm kiếm",
-      "Title or caption": "Tiêu đề hoặc caption",
-      "Date posted": "Ngày đăng",
-      "Start": "Bắt đầu",
-      "to": "đến",
-      "End": "Kết thúc",
-      "Post date start": "Ngày đăng bắt đầu",
-      "Post date end": "Ngày đăng kết thúc",
-      "Show": "Hiển thị",
-      "All videos": "Tất cả video",
-      "Selected only": "Chỉ video đã chọn",
-      "Sort": "Sắp xếp",
-      "Newest first": "Mới nhất trước",
-      "Oldest first": "Cũ nhất trước",
-      "Title A-Z": "Tiêu đề A-Z",
-      "Title Z-A": "Tiêu đề Z-A",
-      "Reset Filters": "Đặt lại bộ lọc",
-      "Selection range": "Khoảng lựa chọn",
-      "Start #": "Từ số",
-      "End #": "Đến số",
-      "Selection range start": "Số bắt đầu lựa chọn",
-      "Selection range end": "Số kết thúc lựa chọn",
-      "Select Range": "Chọn khoảng",
-      "Unselect Range": "Bỏ chọn khoảng",
-      "Select": "Chọn",
-      "No.": "STT",
-      "Cover": "Ảnh bìa",
-      "Title / Caption": "Tiêu đề / Caption",
-      "Date": "Ngày",
-      "Actions": "Thao tác",
-      "Preparing video list...": "Đang chuẩn bị danh sách video...",
-      "Open settings": "Mở cài đặt",
-      "Support the author": "Ủng hộ tác giả",
-      "Close": "Đóng",
-      "Buy me a coffee": "Mời tôi một ly cà phê",
-      "Author Zalo": "Zalo tác giả",
-      "Preferences": "Tùy chọn",
-      "Settings": "Cài đặt",
-      "Interface": "Giao diện",
-      "Choose the language used throughout the downloader.": "Chọn ngôn ngữ hiển thị cho toàn bộ downloader.",
-      "Interface language": "Ngôn ngữ giao diện",
-      "Download settings": "Thiết lập tải xuống",
-      "Folder prefix and pacing for the download queue.": "Tiền tố thư mục và khoảng nghỉ của hàng đợi tải xuống.",
-      "File prefix": "Tiền tố file",
-      "Download delay": "Độ trễ tải xuống",
-      "AI filename translation": "Dịch tên file bằng AI",
-      "Only downloaded filenames change. Video titles in the list stay original.": "Chỉ tên file tải xuống thay đổi. Tiêu đề video trong danh sách vẫn giữ nguyên.",
-      "Translate": "Dịch",
-      "Target language": "Ngôn ngữ đích",
-      "Filename output": "Ngôn ngữ tên file",
-      "AI provider": "Nhà cung cấp AI",
-      "Translation engine": "Công cụ dịch",
-      "Auto — Gemini → Groq": "Tự động — Gemini → Groq",
-      "Gemini only": "Chỉ Gemini",
-      "Groq only": "Chỉ Groq",
-      "Gemini model": "Model Gemini",
-      "Groq model": "Model Groq",
-      "Available": "Đang hoạt động",
-      "Retired — unavailable": "Đã ngừng — không khả dụng",
-      "Gemini 3.6 Flash · Recommended": "Gemini 3.6 Flash · Khuyên dùng",
-      "Gemini 3.5 Flash-Lite · Fast": "Gemini 3.5 Flash-Lite · Nhanh",
-      "Gemini 2.5 Flash · Until Oct 2026": "Gemini 2.5 Flash · Đến 10/2026",
-      "Gemini 2.0 Flash · Retired": "Gemini 2.0 Flash · Đã ngừng",
-      "Gemini 2.0 Flash-Lite · Retired": "Gemini 2.0 Flash-Lite · Đã ngừng",
-      "Gemini 1.5 Flash · Retired": "Gemini 1.5 Flash · Đã ngừng",
-      "GPT-OSS 120B · Recommended": "GPT-OSS 120B · Khuyên dùng",
-      "GPT-OSS 20B · Fast": "GPT-OSS 20B · Nhanh",
-      "Qwen 3.6 27B · Preview": "Qwen 3.6 27B · Thử nghiệm",
-      "Llama 3.3 70B · Enterprise legacy": "Llama 3.3 70B · Enterprise cũ",
-      "Mixtral 8x7B · Retired": "Mixtral 8x7B · Đã ngừng",
-      "Gemma2 9B · Retired": "Gemma2 9B · Đã ngừng",
-      "API keys": "Khóa API",
-      "Stored locally. Use Show keys to temporarily reveal saved keys; one key per line.": "Chỉ lưu cục bộ. Dùng Hiện khóa để tạm xem khóa đã lưu; mỗi dòng một khóa.",
-      "Show keys": "Hiện khóa",
-      "Gemini API keys": "Khóa API Gemini",
-      "Groq API keys": "Khóa API Groq",
-      "Clear saved Gemini keys": "Xóa khóa Gemini đã lưu",
-      "Clear saved Groq keys": "Xóa khóa Groq đã lưu",
-      "Vietnamese mode": "Chế độ tiếng Việt",
-      "Creates concise, natural and engaging Vietnamese titles for Chinese reuploads across review, film, animation, tech, entertainment, education and other content styles—without inventing facts.": "Tạo tiêu đề tiếng Việt ngắn gọn, tự nhiên và cuốn hút cho nội dung reup Trung Quốc thuộc review, phim, hoạt hình, công nghệ, giải trí, giáo dục và nhiều thể loại khác mà không bịa dữ kiện.",
-      "API keys are stored only in this browser's local extension storage and sent directly to the selected AI provider.": "Khóa API chỉ được lưu trong bộ nhớ cục bộ của extension trên trình duyệt này và gửi trực tiếp tới nhà cung cấp AI đã chọn.",
-      "Save settings": "Lưu cài đặt",
-      "Try again": "Thử lại",
-      "Audio": "Âm thanh",
-      "Video": "Video",
-      "Open video": "Mở video",
-      "No videos available for range selection.": "Không có video để chọn theo khoảng.",
-      "No videos available for range unselect.": "Không có video để bỏ chọn theo khoảng.",
-      "Enter valid start and end numbers.": "Hãy nhập số bắt đầu và kết thúc hợp lệ.",
-      "Start must be between 1 and {count}.": "Số bắt đầu phải từ 1 đến {count}.",
-      "Selected videos {start}-{end}.": "Đã chọn video {start}-{end}.",
-      "Unselected videos {start}-{end}.": "Đã bỏ chọn video {start}-{end}.",
-      "Queue ready: {total} items.": "Hàng đợi đã sẵn sàng: {total} mục.",
-      "Downloading {current}/{total}...": "Đang tải {current}/{total}...",
-      "Downloaded {success}/{total}. Failed: {failed}.": "Đã tải {success}/{total}. Lỗi: {failed}.",
-      "Download failed on {current}/{total}. Failed: {failed}.": "Tải lỗi tại {current}/{total}. Tổng lỗi: {failed}.",
-      "Cancelling download queue...": "Đang hủy hàng đợi tải xuống...",
-      "Queue cancelled. Success: {success}, failed: {failed}.": "Đã hủy hàng đợi. Thành công: {success}, lỗi: {failed}.",
-      "Queue complete. Success: {success}, failed: {failed}.": "Hàng đợi hoàn tất. Thành công: {success}, lỗi: {failed}.",
-      "Preparing {total} {kind} files": "Đang chuẩn bị {total} file {kind}",
-      "Downloading {current} of {total}": "Đang tải {current}/{total}",
-      "Downloaded {completed} of {total}": "Đã tải {completed}/{total}",
-      "Continuing after a failed file": "Đang tiếp tục sau một file lỗi",
-      "Stopping download queue...": "Đang dừng hàng đợi tải xuống...",
-      "Download queue stopped": "Hàng đợi tải xuống đã dừng",
-      "Download queue complete": "Hàng đợi tải xuống hoàn tất",
-      "Download progress": "Tiến trình tải xuống",
-      "Waiting for the next file...": "Đang chờ file tiếp theo...",
-      "{percentage}% / {success} successful / {failed} failed": "{percentage}% / {success} thành công / {failed} lỗi",
-      "{completed} of {total} files complete": "Đã hoàn tất {completed}/{total} file",
-      "video": "video",
-      "audio": "audio",
-      "Loading Douyin videos...": "Đang tải video Douyin...",
-      "Open Douyin Downloader": "Mở Douyin Downloader",
-      "Videos could not be loaded": "Không thể tải video",
-      "Preparing your video list": "Đang chuẩn bị danh sách video",
-      "Fetching starts automatically when a Douyin profile opens.": "Dữ liệu được tự động tải khi mở profile Douyin.",
-      "No selected videos to show": "Không có video đã chọn để hiển thị",
-      "No videos match these filters": "Không có video phù hợp bộ lọc",
-      "Adjust or reset the filters to see more results.": "Hãy điều chỉnh hoặc đặt lại bộ lọc để xem thêm kết quả.",
-      "No videos found": "Không tìm thấy video",
-      "This profile does not have any downloadable videos yet.": "Profile này chưa có video có thể tải xuống.",
-      "Preparing profile videos...": "Đang chuẩn bị video của profile...",
-      "Could not find sec_user_id in the current URL.": "Không tìm thấy sec_user_id trong URL hiện tại.",
-      "Refreshing videos in the background...": "Đang làm mới video trong nền...",
-      "Loading videos...": "Đang tải video...",
-      "Refreshing... {count} videos found": "Đang làm mới... tìm thấy {count} video",
-      "Loading... {count} videos found": "Đang tải... tìm thấy {count} video",
-      "{count} videos loaded / Updated {time}": "Đã tải {count} video / Cập nhật {time}",
-      "Failed to fetch videos.": "Không thể lấy video.",
-      "Failed to refresh videos.": "Không thể làm mới video.",
-      "Preparing {kind} files...": "Đang chuẩn bị file {kind}...",
-      "English": "Tiếng Anh",
-      "Vietnamese": "Tiếng Việt",
-      "Japanese": "Tiếng Nhật",
-      "Korean": "Tiếng Hàn",
-      "Chinese": "Tiếng Trung",
-      "Translating {count} filenames to {language}...": "Đang dịch {count} tên file sang {language}...",
-      "Filename translation failed.": "Dịch tên file thất bại.",
-      "Translated {translated}/{total} filenames with {provider}.": "Đã dịch {translated}/{total} tên file bằng {provider}.",
-      "No {kind} URLs available for the selected videos.": "Không có URL {kind} cho các video đã chọn.",
-      "Starting {kind} queue...": "Đang khởi động hàng đợi {kind}...",
-      "Failed to start download queue.": "Không thể khởi động hàng đợi tải xuống.",
-      "Metadata exported for {count} videos.": "Đã xuất metadata cho {count} video.",
-      "Metadata export failed.": "Xuất metadata thất bại.",
-      "Video links exported for {count} videos.": "Đã xuất liên kết của {count} video.",
-      "Link export failed.": "Xuất liên kết thất bại.",
-      "CSV exported for {count} videos.": "Đã xuất CSV cho {count} video.",
-      "CSV export failed.": "Xuất CSV thất bại.",
-      "Failed to cancel queue.": "Không thể hủy hàng đợi.",
-      "Add at least one API key for the selected provider.": "Hãy thêm ít nhất một khóa API cho nhà cung cấp đã chọn.",
-      "Settings saved locally.": "Đã lưu cài đặt cục bộ.",
-      "Failed to save settings.": "Không thể lưu cài đặt.",
-      "{count} saved key(s) — leave blank to keep": "Đã lưu {count} khóa — để trống để giữ nguyên",
-      "{provider} keys will be removed when you save": "Khóa {provider} sẽ bị xóa khi lưu",
-      "{provider} keys marked for removal. Click Save settings to confirm.": "Đã đánh dấu xóa khóa {provider}. Bấm Lưu cài đặt để xác nhận."
-    },
-    JP: {
-      "Ready.": "準備完了。",
-      "Preparing download...": "ダウンロードを準備中...",
-      "Select All (": "すべて選択 (",
-      "Download": "ダウンロード",
-      "Stop": "停止",
-      "Download Selected Videos": "選択した動画をダウンロード",
-      "Download Selected Audios": "選択した音声をダウンロード",
-      "Export Metadata JSON": "メタデータをJSONで出力",
-      "Export Links TXT": "リンクをTXTで出力",
-      "Export CSV": "CSVを出力",
-      "Video layout": "動画レイアウト",
-      "List view": "リスト表示",
-      "Grid view": "グリッド表示",
-      "Refresh": "更新",
-      "Refreshing...": "更新中...",
-      "Search": "検索",
-      "Title or caption": "タイトルまたはキャプション",
-      "Date posted": "投稿日",
-      "Start": "開始",
-      "to": "から",
-      "End": "終了",
-      "Post date start": "投稿日（開始）",
-      "Post date end": "投稿日（終了）",
-      "Show": "表示",
-      "All videos": "すべての動画",
-      "Selected only": "選択済みのみ",
-      "Sort": "並べ替え",
-      "Newest first": "新しい順",
-      "Oldest first": "古い順",
-      "Title A-Z": "タイトル A-Z",
-      "Title Z-A": "タイトル Z-A",
-      "Reset Filters": "フィルターをリセット",
-      "Selection range": "選択範囲",
-      "Start #": "開始番号",
-      "End #": "終了番号",
-      "Selection range start": "選択範囲の開始",
-      "Selection range end": "選択範囲の終了",
-      "Select Range": "範囲を選択",
-      "Unselect Range": "範囲を解除",
-      "Select": "選択",
-      "No.": "番号",
-      "Cover": "カバー",
-      "Title / Caption": "タイトル / キャプション",
-      "Date": "日付",
-      "Actions": "操作",
-      "Preparing video list...": "動画リストを準備中...",
-      "Open settings": "設定を開く",
-      "Support the author": "作者を支援",
-      "Close": "閉じる",
-      "Buy me a coffee": "コーヒーを贈る",
-      "Author Zalo": "作者のZalo",
-      "Preferences": "環境設定",
-      "Settings": "設定",
-      "Interface": "インターフェース",
-      "Choose the language used throughout the downloader.": "ダウンローダー全体で使用する言語を選択します。",
-      "Interface language": "表示言語",
-      "Download settings": "ダウンロード設定",
-      "Folder prefix and pacing for the download queue.": "保存先プレフィックスとダウンロード間隔を設定します。",
-      "File prefix": "ファイルプレフィックス",
-      "Download delay": "ダウンロード間隔",
-      "AI filename translation": "AIファイル名翻訳",
-      "Only downloaded filenames change. Video titles in the list stay original.": "変更されるのは保存ファイル名のみです。リストの動画タイトルは原文のままです。",
-      "Translate": "翻訳",
-      "Target language": "翻訳先言語",
-      "Filename output": "ファイル名の言語",
-      "AI provider": "AIプロバイダー",
-      "Translation engine": "翻訳エンジン",
-      "Auto — Gemini → Groq": "自動 — Gemini → Groq",
-      "Gemini only": "Geminiのみ",
-      "Groq only": "Groqのみ",
-      "Gemini model": "Geminiモデル",
-      "Groq model": "Groqモデル",
-      "Available": "利用可能",
-      "Retired — unavailable": "提供終了 — 利用不可",
-      "Gemini 3.6 Flash · Recommended": "Gemini 3.6 Flash · 推奨",
-      "Gemini 3.5 Flash-Lite · Fast": "Gemini 3.5 Flash-Lite · 高速",
-      "Gemini 2.5 Flash · Until Oct 2026": "Gemini 2.5 Flash · 2026年10月まで",
-      "Gemini 2.0 Flash · Retired": "Gemini 2.0 Flash · 提供終了",
-      "Gemini 2.0 Flash-Lite · Retired": "Gemini 2.0 Flash-Lite · 提供終了",
-      "Gemini 1.5 Flash · Retired": "Gemini 1.5 Flash · 提供終了",
-      "GPT-OSS 120B · Recommended": "GPT-OSS 120B · 推奨",
-      "GPT-OSS 20B · Fast": "GPT-OSS 20B · 高速",
-      "Qwen 3.6 27B · Preview": "Qwen 3.6 27B · プレビュー",
-      "Llama 3.3 70B · Enterprise legacy": "Llama 3.3 70B · Enterpriseレガシー",
-      "Mixtral 8x7B · Retired": "Mixtral 8x7B · 提供終了",
-      "Gemma2 9B · Retired": "Gemma2 9B · 提供終了",
-      "API keys": "APIキー",
-      "Stored locally. Use Show keys to temporarily reveal saved keys; one key per line.": "ローカル保存です。「キーを表示」で一時表示できます。1行に1キー入力してください。",
-      "Show keys": "キーを表示",
-      "Gemini API keys": "Gemini APIキー",
-      "Groq API keys": "Groq APIキー",
-      "Clear saved Gemini keys": "保存済みGeminiキーを削除",
-      "Clear saved Groq keys": "保存済みGroqキーを削除",
-      "Vietnamese mode": "ベトナム語モード",
-      "Creates concise, natural and engaging Vietnamese titles for Chinese reuploads across review, film, animation, tech, entertainment, education and other content styles—without inventing facts.": "中国発のレビュー、映画、アニメ、テクノロジー、娯楽、教育などに対し、事実を追加せず自然で魅力的なベトナム語タイトルを作成します。",
-      "API keys are stored only in this browser's local extension storage and sent directly to the selected AI provider.": "APIキーはこのブラウザの拡張機能ローカルストレージにのみ保存され、選択したAIプロバイダーへ直接送信されます。",
-      "Save settings": "設定を保存",
-      "Try again": "再試行",
-      "Audio": "音声",
-      "Video": "動画",
-      "Open video": "動画を開く",
-      "No videos available for range selection.": "範囲選択できる動画がありません。",
-      "No videos available for range unselect.": "範囲解除できる動画がありません。",
-      "Enter valid start and end numbers.": "有効な開始番号と終了番号を入力してください。",
-      "Start must be between 1 and {count}.": "開始番号は1から{count}の間で指定してください。",
-      "Selected videos {start}-{end}.": "動画{start}～{end}を選択しました。",
-      "Unselected videos {start}-{end}.": "動画{start}～{end}の選択を解除しました。",
-      "Queue ready: {total} items.": "キューの準備完了：{total}件。",
-      "Downloading {current}/{total}...": "ダウンロード中 {current}/{total}...",
-      "Downloaded {success}/{total}. Failed: {failed}.": "{success}/{total}件完了。失敗：{failed}件。",
-      "Download failed on {current}/{total}. Failed: {failed}.": "{current}/{total}件目で失敗。失敗数：{failed}件。",
-      "Cancelling download queue...": "ダウンロードキューをキャンセル中...",
-      "Queue cancelled. Success: {success}, failed: {failed}.": "キューをキャンセルしました。成功：{success}、失敗：{failed}。",
-      "Queue complete. Success: {success}, failed: {failed}.": "キュー完了。成功：{success}、失敗：{failed}。",
-      "Preparing {total} {kind} files": "{total}件の{kind}ファイルを準備中",
-      "Downloading {current} of {total}": "ダウンロード中 {current}/{total}",
-      "Downloaded {completed} of {total}": "{completed}/{total}件ダウンロード済み",
-      "Continuing after a failed file": "失敗したファイルの次へ進みます",
-      "Stopping download queue...": "ダウンロードキューを停止中...",
-      "Download queue stopped": "ダウンロードキューを停止しました",
-      "Download queue complete": "ダウンロードキューが完了しました",
-      "Download progress": "ダウンロード進捗",
-      "Waiting for the next file...": "次のファイルを待機中...",
-      "{percentage}% / {success} successful / {failed} failed": "{percentage}% / 成功 {success} / 失敗 {failed}",
-      "{completed} of {total} files complete": "{completed}/{total}ファイル完了",
-      "video": "動画",
-      "audio": "音声",
-      "Loading Douyin videos...": "Douyin動画を読み込み中...",
-      "Open Douyin Downloader": "Douyin Downloaderを開く",
-      "Videos could not be loaded": "動画を読み込めませんでした",
-      "Preparing your video list": "動画リストを準備中",
-      "Fetching starts automatically when a Douyin profile opens.": "Douyinプロフィールを開くと自動取得が開始されます。",
-      "No selected videos to show": "表示できる選択済み動画がありません",
-      "No videos match these filters": "フィルターに一致する動画がありません",
-      "Adjust or reset the filters to see more results.": "フィルターを変更またはリセットしてください。",
-      "No videos found": "動画が見つかりません",
-      "This profile does not have any downloadable videos yet.": "このプロフィールにはダウンロード可能な動画がまだありません。",
-      "Preparing profile videos...": "プロフィール動画を準備中...",
-      "Could not find sec_user_id in the current URL.": "現在のURLからsec_user_idを取得できません。",
-      "Refreshing videos in the background...": "バックグラウンドで動画を更新中...",
-      "Loading videos...": "動画を読み込み中...",
-      "Refreshing... {count} videos found": "更新中... {count}件の動画を検出",
-      "Loading... {count} videos found": "読み込み中... {count}件の動画を検出",
-      "{count} videos loaded / Updated {time}": "{count}件の動画を読み込みました / 更新 {time}",
-      "Failed to fetch videos.": "動画の取得に失敗しました。",
-      "Failed to refresh videos.": "動画の更新に失敗しました。",
-      "Preparing {kind} files...": "{kind}ファイルを準備中...",
-      "English": "英語",
-      "Vietnamese": "ベトナム語",
-      "Japanese": "日本語",
-      "Korean": "韓国語",
-      "Chinese": "中国語",
-      "Translating {count} filenames to {language}...": "{count}件のファイル名を{language}へ翻訳中...",
-      "Filename translation failed.": "ファイル名の翻訳に失敗しました。",
-      "Translated {translated}/{total} filenames with {provider}.": "{provider}で{translated}/{total}件のファイル名を翻訳しました。",
-      "No {kind} URLs available for the selected videos.": "選択した動画に利用可能な{kind} URLがありません。",
-      "Starting {kind} queue...": "{kind}キューを開始中...",
-      "Failed to start download queue.": "ダウンロードキューを開始できませんでした。",
-      "Metadata exported for {count} videos.": "{count}件の動画メタデータを出力しました。",
-      "Metadata export failed.": "メタデータの出力に失敗しました。",
-      "Video links exported for {count} videos.": "{count}件の動画リンクを出力しました。",
-      "Link export failed.": "リンクの出力に失敗しました。",
-      "CSV exported for {count} videos.": "{count}件の動画をCSVで出力しました。",
-      "CSV export failed.": "CSVの出力に失敗しました。",
-      "Failed to cancel queue.": "キューをキャンセルできませんでした。",
-      "Add at least one API key for the selected provider.": "選択したプロバイダーのAPIキーを1つ以上追加してください。",
-      "Settings saved locally.": "設定をローカルに保存しました。",
-      "Failed to save settings.": "設定を保存できませんでした。",
-      "{count} saved key(s) — leave blank to keep": "{count}個のキーを保存済み — 維持する場合は空欄",
-      "{provider} keys will be removed when you save": "保存時に{provider}キーを削除します",
-      "{provider} keys marked for removal. Click Save settings to confirm.": "{provider}キーを削除対象にしました。「設定を保存」で確定してください。"
-    },
-    KR: {
-      "Ready.": "준비됨.",
-      "Preparing download...": "다운로드 준비 중...",
-      "Select All (": "모두 선택 (",
-      "Download": "다운로드",
-      "Stop": "중지",
-      "Download Selected Videos": "선택한 동영상 다운로드",
-      "Download Selected Audios": "선택한 오디오 다운로드",
-      "Export Metadata JSON": "메타데이터 JSON 내보내기",
-      "Export Links TXT": "링크 TXT 내보내기",
-      "Export CSV": "CSV 내보내기",
-      "Video layout": "동영상 레이아웃",
-      "List view": "목록 보기",
-      "Grid view": "그리드 보기",
-      "Refresh": "새로고침",
-      "Refreshing...": "새로고침 중...",
-      "Search": "검색",
-      "Title or caption": "제목 또는 캡션",
-      "Date posted": "게시일",
-      "Start": "시작",
-      "to": "부터",
-      "End": "종료",
-      "Post date start": "게시 시작일",
-      "Post date end": "게시 종료일",
-      "Show": "표시",
-      "All videos": "모든 동영상",
-      "Selected only": "선택 항목만",
-      "Sort": "정렬",
-      "Newest first": "최신순",
-      "Oldest first": "오래된순",
-      "Title A-Z": "제목 A-Z",
-      "Title Z-A": "제목 Z-A",
-      "Reset Filters": "필터 초기화",
-      "Selection range": "선택 범위",
-      "Start #": "시작 번호",
-      "End #": "종료 번호",
-      "Selection range start": "선택 범위 시작",
-      "Selection range end": "선택 범위 종료",
-      "Select Range": "범위 선택",
-      "Unselect Range": "범위 선택 해제",
-      "Select": "선택",
-      "No.": "번호",
-      "Cover": "커버",
-      "Title / Caption": "제목 / 캡션",
-      "Date": "날짜",
-      "Actions": "작업",
-      "Preparing video list...": "동영상 목록 준비 중...",
-      "Open settings": "설정 열기",
-      "Support the author": "제작자 후원",
-      "Close": "닫기",
-      "Buy me a coffee": "커피 한 잔 후원",
-      "Author Zalo": "제작자 Zalo",
-      "Preferences": "환경설정",
-      "Settings": "설정",
-      "Interface": "인터페이스",
-      "Choose the language used throughout the downloader.": "다운로더 전체에서 사용할 언어를 선택하세요.",
-      "Interface language": "인터페이스 언어",
-      "Download settings": "다운로드 설정",
-      "Folder prefix and pacing for the download queue.": "다운로드 폴더 접두사와 대기 시간을 설정합니다.",
-      "File prefix": "파일 접두사",
-      "Download delay": "다운로드 지연",
-      "AI filename translation": "AI 파일명 번역",
-      "Only downloaded filenames change. Video titles in the list stay original.": "다운로드 파일명만 변경되며 목록의 동영상 제목은 원문으로 유지됩니다.",
-      "Translate": "번역",
-      "Target language": "대상 언어",
-      "Filename output": "파일명 출력 언어",
-      "AI provider": "AI 제공업체",
-      "Translation engine": "번역 엔진",
-      "Auto — Gemini → Groq": "자동 — Gemini → Groq",
-      "Gemini only": "Gemini만",
-      "Groq only": "Groq만",
-      "Gemini model": "Gemini 모델",
-      "Groq model": "Groq 모델",
-      "Available": "사용 가능",
-      "Retired — unavailable": "지원 종료 — 사용 불가",
-      "Gemini 3.6 Flash · Recommended": "Gemini 3.6 Flash · 권장",
-      "Gemini 3.5 Flash-Lite · Fast": "Gemini 3.5 Flash-Lite · 빠름",
-      "Gemini 2.5 Flash · Until Oct 2026": "Gemini 2.5 Flash · 2026년 10월까지",
-      "Gemini 2.0 Flash · Retired": "Gemini 2.0 Flash · 지원 종료",
-      "Gemini 2.0 Flash-Lite · Retired": "Gemini 2.0 Flash-Lite · 지원 종료",
-      "Gemini 1.5 Flash · Retired": "Gemini 1.5 Flash · 지원 종료",
-      "GPT-OSS 120B · Recommended": "GPT-OSS 120B · 권장",
-      "GPT-OSS 20B · Fast": "GPT-OSS 20B · 빠름",
-      "Qwen 3.6 27B · Preview": "Qwen 3.6 27B · 미리보기",
-      "Llama 3.3 70B · Enterprise legacy": "Llama 3.3 70B · Enterprise 레거시",
-      "Mixtral 8x7B · Retired": "Mixtral 8x7B · 지원 종료",
-      "Gemma2 9B · Retired": "Gemma2 9B · 지원 종료",
-      "API keys": "API 키",
-      "Stored locally. Use Show keys to temporarily reveal saved keys; one key per line.": "로컬에만 저장됩니다. 키 표시로 잠시 확인할 수 있으며 한 줄에 하나씩 입력하세요.",
-      "Show keys": "키 표시",
-      "Gemini API keys": "Gemini API 키",
-      "Groq API keys": "Groq API 키",
-      "Clear saved Gemini keys": "저장된 Gemini 키 삭제",
-      "Clear saved Groq keys": "저장된 Groq 키 삭제",
-      "Vietnamese mode": "베트남어 모드",
-      "Creates concise, natural and engaging Vietnamese titles for Chinese reuploads across review, film, animation, tech, entertainment, education and other content styles—without inventing facts.": "중국 리업로드의 리뷰, 영화, 애니메이션, 기술, 엔터테인먼트, 교육 등 다양한 콘텐츠에 사실을 추가하지 않고 자연스럽고 매력적인 베트남어 제목을 만듭니다.",
-      "API keys are stored only in this browser's local extension storage and sent directly to the selected AI provider.": "API 키는 이 브라우저의 확장 프로그램 로컬 저장소에만 저장되고 선택한 AI 제공업체로 직접 전송됩니다.",
-      "Save settings": "설정 저장",
-      "Try again": "다시 시도",
-      "Audio": "오디오",
-      "Video": "동영상",
-      "Open video": "동영상 열기",
-      "No videos available for range selection.": "범위 선택할 동영상이 없습니다.",
-      "No videos available for range unselect.": "범위 선택을 해제할 동영상이 없습니다.",
-      "Enter valid start and end numbers.": "유효한 시작 번호와 종료 번호를 입력하세요.",
-      "Start must be between 1 and {count}.": "시작 번호는 1에서 {count} 사이여야 합니다.",
-      "Selected videos {start}-{end}.": "동영상 {start}-{end}을(를) 선택했습니다.",
-      "Unselected videos {start}-{end}.": "동영상 {start}-{end}의 선택을 해제했습니다.",
-      "Queue ready: {total} items.": "대기열 준비 완료: {total}개.",
-      "Downloading {current}/{total}...": "다운로드 중 {current}/{total}...",
-      "Downloaded {success}/{total}. Failed: {failed}.": "{success}/{total} 다운로드 완료. 실패: {failed}.",
-      "Download failed on {current}/{total}. Failed: {failed}.": "{current}/{total}에서 실패. 총 실패: {failed}.",
-      "Cancelling download queue...": "다운로드 대기열 취소 중...",
-      "Queue cancelled. Success: {success}, failed: {failed}.": "대기열 취소됨. 성공: {success}, 실패: {failed}.",
-      "Queue complete. Success: {success}, failed: {failed}.": "대기열 완료. 성공: {success}, 실패: {failed}.",
-      "Preparing {total} {kind} files": "{total}개의 {kind} 파일 준비 중",
-      "Downloading {current} of {total}": "다운로드 중 {current}/{total}",
-      "Downloaded {completed} of {total}": "{completed}/{total} 다운로드 완료",
-      "Continuing after a failed file": "실패한 파일 다음으로 계속합니다",
-      "Stopping download queue...": "다운로드 대기열 중지 중...",
-      "Download queue stopped": "다운로드 대기열 중지됨",
-      "Download queue complete": "다운로드 대기열 완료",
-      "Download progress": "다운로드 진행률",
-      "Waiting for the next file...": "다음 파일 대기 중...",
-      "{percentage}% / {success} successful / {failed} failed": "{percentage}% / 성공 {success} / 실패 {failed}",
-      "{completed} of {total} files complete": "{completed}/{total}개 파일 완료",
-      "video": "동영상",
-      "audio": "오디오",
-      "Loading Douyin videos...": "Douyin 동영상 로딩 중...",
-      "Open Douyin Downloader": "Douyin Downloader 열기",
-      "Videos could not be loaded": "동영상을 불러올 수 없습니다",
-      "Preparing your video list": "동영상 목록 준비 중",
-      "Fetching starts automatically when a Douyin profile opens.": "Douyin 프로필을 열면 자동으로 가져옵니다.",
-      "No selected videos to show": "표시할 선택 동영상이 없습니다",
-      "No videos match these filters": "필터와 일치하는 동영상이 없습니다",
-      "Adjust or reset the filters to see more results.": "필터를 조정하거나 초기화하세요.",
-      "No videos found": "동영상을 찾을 수 없습니다",
-      "This profile does not have any downloadable videos yet.": "이 프로필에는 아직 다운로드 가능한 동영상이 없습니다.",
-      "Preparing profile videos...": "프로필 동영상 준비 중...",
-      "Could not find sec_user_id in the current URL.": "현재 URL에서 sec_user_id를 찾을 수 없습니다.",
-      "Refreshing videos in the background...": "백그라운드에서 동영상 새로고침 중...",
-      "Loading videos...": "동영상 로딩 중...",
-      "Refreshing... {count} videos found": "새로고침 중... 동영상 {count}개 발견",
-      "Loading... {count} videos found": "로딩 중... 동영상 {count}개 발견",
-      "{count} videos loaded / Updated {time}": "동영상 {count}개 로드됨 / 업데이트 {time}",
-      "Failed to fetch videos.": "동영상을 가져오지 못했습니다.",
-      "Failed to refresh videos.": "동영상을 새로고침하지 못했습니다.",
-      "Preparing {kind} files...": "{kind} 파일 준비 중...",
-      "English": "영어",
-      "Vietnamese": "베트남어",
-      "Japanese": "일본어",
-      "Korean": "한국어",
-      "Chinese": "중국어",
-      "Translating {count} filenames to {language}...": "파일명 {count}개를 {language}(으)로 번역 중...",
-      "Filename translation failed.": "파일명 번역에 실패했습니다.",
-      "Translated {translated}/{total} filenames with {provider}.": "{provider}로 파일명 {translated}/{total}개를 번역했습니다.",
-      "No {kind} URLs available for the selected videos.": "선택한 동영상에 사용 가능한 {kind} URL이 없습니다.",
-      "Starting {kind} queue...": "{kind} 대기열 시작 중...",
-      "Failed to start download queue.": "다운로드 대기열을 시작하지 못했습니다.",
-      "Metadata exported for {count} videos.": "동영상 {count}개의 메타데이터를 내보냈습니다.",
-      "Metadata export failed.": "메타데이터 내보내기에 실패했습니다.",
-      "Video links exported for {count} videos.": "동영상 링크 {count}개를 내보냈습니다.",
-      "Link export failed.": "링크 내보내기에 실패했습니다.",
-      "CSV exported for {count} videos.": "동영상 {count}개를 CSV로 내보냈습니다.",
-      "CSV export failed.": "CSV 내보내기에 실패했습니다.",
-      "Failed to cancel queue.": "대기열을 취소하지 못했습니다.",
-      "Add at least one API key for the selected provider.": "선택한 제공업체의 API 키를 하나 이상 추가하세요.",
-      "Settings saved locally.": "설정을 로컬에 저장했습니다.",
-      "Failed to save settings.": "설정을 저장하지 못했습니다.",
-      "{count} saved key(s) — leave blank to keep": "저장된 키 {count}개 — 유지하려면 비워 두세요",
-      "{provider} keys will be removed when you save": "저장 시 {provider} 키가 삭제됩니다",
-      "{provider} keys marked for removal. Click Save settings to confirm.": "{provider} 키를 삭제 대상으로 표시했습니다. 설정 저장을 눌러 확인하세요."
-    },
-    CN: {
-      "Ready.": "就绪。",
-      "Preparing download...": "正在准备下载...",
-      "Select All (": "全选 (",
-      "Download": "下载",
-      "Stop": "停止",
-      "Download Selected Videos": "下载所选视频",
-      "Download Selected Audios": "下载所选音频",
-      "Export Metadata JSON": "导出元数据 JSON",
-      "Export Links TXT": "导出链接 TXT",
-      "Export CSV": "导出 CSV",
-      "Video layout": "视频布局",
-      "List view": "列表视图",
-      "Grid view": "网格视图",
-      "Refresh": "刷新",
-      "Refreshing...": "正在刷新...",
-      "Search": "搜索",
-      "Title or caption": "标题或文案",
-      "Date posted": "发布日期",
-      "Start": "开始",
-      "to": "至",
-      "End": "结束",
-      "Post date start": "发布日期开始",
-      "Post date end": "发布日期结束",
-      "Show": "显示",
-      "All videos": "全部视频",
-      "Selected only": "仅已选择",
-      "Sort": "排序",
-      "Newest first": "最新优先",
-      "Oldest first": "最早优先",
-      "Title A-Z": "标题 A-Z",
-      "Title Z-A": "标题 Z-A",
-      "Reset Filters": "重置筛选",
-      "Selection range": "选择范围",
-      "Start #": "起始编号",
-      "End #": "结束编号",
-      "Selection range start": "选择范围起点",
-      "Selection range end": "选择范围终点",
-      "Select Range": "选择范围",
-      "Unselect Range": "取消范围选择",
-      "Select": "选择",
-      "No.": "序号",
-      "Cover": "封面",
-      "Title / Caption": "标题 / 文案",
-      "Date": "日期",
-      "Actions": "操作",
-      "Preparing video list...": "正在准备视频列表...",
-      "Open settings": "打开设置",
-      "Support the author": "支持作者",
-      "Close": "关闭",
-      "Buy me a coffee": "请我喝杯咖啡",
-      "Author Zalo": "作者 Zalo",
-      "Preferences": "偏好设置",
-      "Settings": "设置",
-      "Interface": "界面",
-      "Choose the language used throughout the downloader.": "选择下载器全局使用的界面语言。",
-      "Interface language": "界面语言",
-      "Download settings": "下载设置",
-      "Folder prefix and pacing for the download queue.": "设置下载目录前缀和队列间隔。",
-      "File prefix": "文件前缀",
-      "Download delay": "下载间隔",
-      "AI filename translation": "AI 文件名翻译",
-      "Only downloaded filenames change. Video titles in the list stay original.": "仅更改下载文件名，列表中的视频标题保持原文。",
-      "Translate": "翻译",
-      "Target language": "目标语言",
-      "Filename output": "文件名语言",
-      "AI provider": "AI 提供商",
-      "Translation engine": "翻译引擎",
-      "Auto — Gemini → Groq": "自动 — Gemini → Groq",
-      "Gemini only": "仅 Gemini",
-      "Groq only": "仅 Groq",
-      "Gemini model": "Gemini 模型",
-      "Groq model": "Groq 模型",
-      "Available": "可用",
-      "Retired — unavailable": "已停用 — 不可用",
-      "Gemini 3.6 Flash · Recommended": "Gemini 3.6 Flash · 推荐",
-      "Gemini 3.5 Flash-Lite · Fast": "Gemini 3.5 Flash-Lite · 快速",
-      "Gemini 2.5 Flash · Until Oct 2026": "Gemini 2.5 Flash · 至 2026年10月",
-      "Gemini 2.0 Flash · Retired": "Gemini 2.0 Flash · 已停用",
-      "Gemini 2.0 Flash-Lite · Retired": "Gemini 2.0 Flash-Lite · 已停用",
-      "Gemini 1.5 Flash · Retired": "Gemini 1.5 Flash · 已停用",
-      "GPT-OSS 120B · Recommended": "GPT-OSS 120B · 推荐",
-      "GPT-OSS 20B · Fast": "GPT-OSS 20B · 快速",
-      "Qwen 3.6 27B · Preview": "Qwen 3.6 27B · 预览",
-      "Llama 3.3 70B · Enterprise legacy": "Llama 3.3 70B · Enterprise 旧版",
-      "Mixtral 8x7B · Retired": "Mixtral 8x7B · 已停用",
-      "Gemma2 9B · Retired": "Gemma2 9B · 已停用",
-      "API keys": "API 密钥",
-      "Stored locally. Use Show keys to temporarily reveal saved keys; one key per line.": "仅保存在本地。使用“显示密钥”可临时查看；每行输入一个密钥。",
-      "Show keys": "显示密钥",
-      "Gemini API keys": "Gemini API 密钥",
-      "Groq API keys": "Groq API 密钥",
-      "Clear saved Gemini keys": "清除已保存的 Gemini 密钥",
-      "Clear saved Groq keys": "清除已保存的 Groq 密钥",
-      "Vietnamese mode": "越南语模式",
-      "Creates concise, natural and engaging Vietnamese titles for Chinese reuploads across review, film, animation, tech, entertainment, education and other content styles—without inventing facts.": "为中国转载的评测、影视、动画、科技、娱乐、教育等内容生成简洁、自然且吸引人的越南语标题，同时不虚构事实。",
-      "API keys are stored only in this browser's local extension storage and sent directly to the selected AI provider.": "API 密钥仅保存在此浏览器的扩展本地存储中，并直接发送给所选 AI 提供商。",
-      "Save settings": "保存设置",
-      "Try again": "重试",
-      "Audio": "音频",
-      "Video": "视频",
-      "Open video": "打开视频",
-      "No videos available for range selection.": "没有可供范围选择的视频。",
-      "No videos available for range unselect.": "没有可取消范围选择的视频。",
-      "Enter valid start and end numbers.": "请输入有效的起始和结束编号。",
-      "Start must be between 1 and {count}.": "起始编号必须在 1 到 {count} 之间。",
-      "Selected videos {start}-{end}.": "已选择视频 {start}-{end}。",
-      "Unselected videos {start}-{end}.": "已取消选择视频 {start}-{end}。",
-      "Queue ready: {total} items.": "队列已就绪：{total} 项。",
-      "Downloading {current}/{total}...": "正在下载 {current}/{total}...",
-      "Downloaded {success}/{total}. Failed: {failed}.": "已下载 {success}/{total}。失败：{failed}。",
-      "Download failed on {current}/{total}. Failed: {failed}.": "在 {current}/{total} 下载失败。失败总数：{failed}。",
-      "Cancelling download queue...": "正在取消下载队列...",
-      "Queue cancelled. Success: {success}, failed: {failed}.": "队列已取消。成功：{success}，失败：{failed}。",
-      "Queue complete. Success: {success}, failed: {failed}.": "队列已完成。成功：{success}，失败：{failed}。",
-      "Preparing {total} {kind} files": "正在准备 {total} 个{kind}文件",
-      "Downloading {current} of {total}": "正在下载 {current}/{total}",
-      "Downloaded {completed} of {total}": "已下载 {completed}/{total}",
-      "Continuing after a failed file": "文件失败，继续处理下一项",
-      "Stopping download queue...": "正在停止下载队列...",
-      "Download queue stopped": "下载队列已停止",
-      "Download queue complete": "下载队列已完成",
-      "Download progress": "下载进度",
-      "Waiting for the next file...": "正在等待下一个文件...",
-      "{percentage}% / {success} successful / {failed} failed": "{percentage}% / 成功 {success} / 失败 {failed}",
-      "{completed} of {total} files complete": "已完成 {completed}/{total} 个文件",
-      "video": "视频",
-      "audio": "音频",
-      "Loading Douyin videos...": "正在加载抖音视频...",
-      "Open Douyin Downloader": "打开 Douyin Downloader",
-      "Videos could not be loaded": "无法加载视频",
-      "Preparing your video list": "正在准备视频列表",
-      "Fetching starts automatically when a Douyin profile opens.": "打开抖音主页后会自动开始获取。",
-      "No selected videos to show": "没有已选择的视频可显示",
-      "No videos match these filters": "没有视频符合筛选条件",
-      "Adjust or reset the filters to see more results.": "请调整或重置筛选条件。",
-      "No videos found": "未找到视频",
-      "This profile does not have any downloadable videos yet.": "此主页暂时没有可下载的视频。",
-      "Preparing profile videos...": "正在准备主页视频...",
-      "Could not find sec_user_id in the current URL.": "无法在当前 URL 中找到 sec_user_id。",
-      "Refreshing videos in the background...": "正在后台刷新视频...",
-      "Loading videos...": "正在加载视频...",
-      "Refreshing... {count} videos found": "正在刷新... 已找到 {count} 个视频",
-      "Loading... {count} videos found": "正在加载... 已找到 {count} 个视频",
-      "{count} videos loaded / Updated {time}": "已加载 {count} 个视频 / 更新于 {time}",
-      "Failed to fetch videos.": "获取视频失败。",
-      "Failed to refresh videos.": "刷新视频失败。",
-      "Preparing {kind} files...": "正在准备{kind}文件...",
-      "English": "英语",
-      "Vietnamese": "越南语",
-      "Japanese": "日语",
-      "Korean": "韩语",
-      "Chinese": "中文",
-      "Translating {count} filenames to {language}...": "正在将 {count} 个文件名翻译为{language}...",
-      "Filename translation failed.": "文件名翻译失败。",
-      "Translated {translated}/{total} filenames with {provider}.": "已使用 {provider} 翻译 {translated}/{total} 个文件名。",
-      "No {kind} URLs available for the selected videos.": "所选视频没有可用的{kind} URL。",
-      "Starting {kind} queue...": "正在启动{kind}队列...",
-      "Failed to start download queue.": "无法启动下载队列。",
-      "Metadata exported for {count} videos.": "已导出 {count} 个视频的元数据。",
-      "Metadata export failed.": "元数据导出失败。",
-      "Video links exported for {count} videos.": "已导出 {count} 个视频链接。",
-      "Link export failed.": "链接导出失败。",
-      "CSV exported for {count} videos.": "已导出 {count} 个视频的 CSV。",
-      "CSV export failed.": "CSV 导出失败。",
-      "Failed to cancel queue.": "无法取消队列。",
-      "Add at least one API key for the selected provider.": "请为所选提供商添加至少一个 API 密钥。",
-      "Settings saved locally.": "设置已保存到本地。",
-      "Failed to save settings.": "无法保存设置。",
-      "{count} saved key(s) — leave blank to keep": "已保存 {count} 个密钥 — 留空以保留",
-      "{provider} keys will be removed when you save": "保存时将删除 {provider} 密钥",
-      "{provider} keys marked for removal. Click Save settings to confirm.": "已标记删除 {provider} 密钥。点击“保存设置”确认。"
-    }
-  };
-
-  Object.assign(UI_TRANSLATIONS.VI, {
-    "Version": "Phiên bản",
-    "Close settings": "Đóng cài đặt",
-    "Select video {index}": "Chọn video {index}"
-  });
-  Object.assign(UI_TRANSLATIONS.JP, {
-    "Version": "バージョン",
-    "Close settings": "設定を閉じる",
-    "Select video {index}": "動画 {index} を選択"
-  });
-  Object.assign(UI_TRANSLATIONS.KR, {
-    "Version": "버전",
-    "Close settings": "설정 닫기",
-    "Select video {index}": "동영상 {index} 선택"
-  });
-  Object.assign(UI_TRANSLATIONS.CN, {
-    "Version": "版本",
-    "Close settings": "关闭设置",
-    "Select video {index}": "选择视频 {index}"
-  });
-
-  const UI_TRANSLATION_KEYS = new Set(
-    Object.values(UI_TRANSLATIONS).flatMap((dictionary) => Object.keys(dictionary))
-  );
+  const Locales = globalThis.DYEXLocales;
+  if (!Locales) throw new Error("DYEXLocales is unavailable.");
+  const { UI_LOCALES, UI_TRANSLATIONS, UI_TRANSLATION_KEYS } = Locales;
 
   const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -827,11 +106,6 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
-  }
-
-  function toHttps(url) {
-    if (!url || typeof url !== "string") return "";
-    return url.startsWith("http://") ? url.replace(/^http:\/\//i, "https://") : url;
   }
 
   function formatDisplayDate(dateString, locale = UI_LOCALES.EN) {
@@ -907,8 +181,10 @@
           throw error;
         }
         lastError = error;
-        if (attempt === retries) break;
-        await sleep(delayMs);
+        if (attempt === retries || error?.retryable === false) break;
+        const backoff = delayMs * (2 ** (attempt - 1));
+        const jitter = Math.floor(Math.random() * Math.max(100, delayMs * 0.35));
+        await sleep(backoff + jitter);
       }
     }
     throw lastError;
@@ -957,7 +233,7 @@
       chrome.runtime.sendMessage(message, (response) => {
         const error = chrome.runtime.lastError;
         if (error) {
-          reject(new Error(error.message));
+          reject(new Core.CoreError(Core.ERROR_CODES.UNKNOWN, error.message, { retryable: true }));
           return;
         }
         resolve(response);
@@ -970,7 +246,7 @@
       chrome.storage.local.get(keys, (result) => {
         const error = chrome.runtime.lastError;
         if (error) {
-          reject(new Error(error.message));
+          reject(new Core.CoreError(Core.ERROR_CODES.STORAGE_READ_FAILED, error.message));
           return;
         }
         resolve(result || {});
@@ -983,7 +259,7 @@
       chrome.storage.local.set(values, () => {
         const error = chrome.runtime.lastError;
         if (error) {
-          reject(new Error(error.message));
+          reject(new Core.CoreError(Core.ERROR_CODES.STORAGE_WRITE_FAILED, error.message));
           return;
         }
         resolve();
@@ -1009,106 +285,15 @@
   }
 
   function normalizeDelay(value) {
-    const numeric = Number(value);
-    if (!Number.isFinite(numeric) || numeric < 0) {
-      return CONFIG.QUEUE_DELAY_MS;
-    }
-    return Math.round(numeric);
+    return Core.normalizeDelay(value, CONFIG.QUEUE_DELAY_MS);
   }
 
   function normalizeApiKeys(value) {
-    const source = Array.isArray(value) ? value : String(value || "").split(/[\s,;]+/);
-    return Array.from(new Set(source.map((key) => String(key || "").trim()).filter(Boolean))).slice(0, 50);
+    return Core.normalizeApiKeys(value);
   }
 
-  class DouyinApiClient {
-    constructor(secUserId, signal = null) {
-      this.secUserId = secUserId;
-      this.signal = signal;
-    }
-
-    async fetchVideos(maxCursor = 0) {
-      const url = new URL(CONFIG.API_BASE_URL);
-      const query = {
-        ...CONFIG.REQUEST_QUERY,
-        sec_user_id: this.secUserId,
-        max_cursor: String(maxCursor)
-      };
-
-      Object.entries(query).forEach(([key, value]) => url.searchParams.set(key, value));
-
-      const response = await fetch(url.toString(), {
-        method: "GET",
-        credentials: "include",
-        referrer: window.location.href,
-        signal: this.signal,
-        headers: {
-          Accept: "application/json, text/plain, */*"
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} while fetching videos`);
-      }
-
-      const payload = await response.json();
-      if (payload?.status_code && payload.status_code !== 0) {
-        throw new Error(`Douyin API returned status_code ${payload.status_code}`);
-      }
-
-      return payload;
-    }
-  }
-
-  class VideoDataProcessor {
-    static extractVideoMetadata(item) {
-      if (!item || !item.aweme_id) return null;
-
-      const caption = item.desc || "";
-      const title = item.title || caption || "Untitled";
-      const videoUrl = toHttps(
-        item.video?.play_addr?.url_list?.[0] || item.video?.download_addr?.url_list?.[0] || ""
-      );
-      const audioUrl = toHttps(item.music?.play_url?.url_list?.[0] || "");
-      const coverUrl = toHttps(item.video?.cover?.url_list?.[0] || item.cover?.url_list?.[0] || "");
-      const dynamicCoverUrl = toHttps(
-        item.video?.dynamic_cover?.url_list?.[0] || item.dynamic_cover?.url_list?.[0] || ""
-      );
-      const createTime = item.create_time ? new Date(item.create_time * 1000).toISOString() : "";
-
-      if (!videoUrl) return null;
-
-      return {
-        id: String(item.aweme_id),
-        desc: caption,
-        caption,
-        title,
-        createTime,
-        videoUrl,
-        audioUrl,
-        coverUrl,
-        dynamicCoverUrl
-      };
-    }
-
-    static processPayload(payload, existingIds = new Set()) {
-      const sourceList = Array.isArray(payload?.aweme_list) ? payload.aweme_list : [];
-      const videos = [];
-
-      for (const item of sourceList) {
-        const video = this.extractVideoMetadata(item);
-        if (!video || existingIds.has(video.id)) continue;
-        existingIds.add(video.id);
-        videos.push(video);
-      }
-
-      return {
-        videos,
-        hasMore: Boolean(payload?.has_more),
-        maxCursor: Number(payload?.max_cursor || 0)
-      };
-    }
-  }
+  const DouyinApiClient = Core.DouyinApiClient;
+  const VideoDataProcessor = Object.freeze({ processPayload: Core.normalizeDouyinPayload });
 
   class DouyinDownloaderExtension {
     constructor() {
@@ -1126,6 +311,7 @@
         end: ""
       };
       this.settings = {
+        schemaVersion: Core.SETTINGS_SCHEMA_VERSION,
         uiLanguage: "EN",
         downloadFolder: "douyin_downloads",
         queueDelayMs: CONFIG.QUEUE_DELAY_MS,
@@ -1158,6 +344,31 @@
       this.currentStatusState = null;
       this.currentSettingsStatusState = null;
       this.lastProgressState = null;
+      this.fetchState = new Core.StateMachine("fetch", "idle", {
+        idle: ["fetching"],
+        fetching: ["ready", "error", "idle"],
+        ready: ["refreshing", "idle"],
+        refreshing: ["ready", "error", "idle"],
+        error: ["fetching", "refreshing", "idle"]
+      });
+      this.downloadState = new Core.StateMachine("download", "idle", {
+        idle: ["preparing", "queued", "downloading"],
+        preparing: ["translating", "queued", "error", "idle"],
+        translating: ["queued", "error", "idle"],
+        queued: ["downloading", "cancelling", "cancelled", "completed", "error"],
+        downloading: ["downloading", "cancelling", "cancelled", "completed", "error"],
+        cancelling: ["cancelled", "error"],
+        cancelled: ["idle", "preparing", "queued", "downloading"],
+        completed: ["idle", "preparing", "queued", "downloading"],
+        error: ["idle", "preparing", "queued", "downloading"]
+      });
+      this.translationState = new Core.StateMachine("translation", "idle", {
+        idle: ["disabled", "translating"],
+        disabled: ["idle", "translating"],
+        translating: ["completed", "error", "idle"],
+        completed: ["idle", "translating", "disabled"],
+        error: ["idle", "translating", "disabled"]
+      });
       this.fetchRequestId = 0;
       this.fetchAbortController = null;
       this.ui = {};
@@ -1168,6 +379,24 @@
       this.boundOnDocumentClick = this.onDocumentClick.bind(this);
       this.boundOnKeyDown = this.onKeyDown.bind(this);
       this.boundOnRuntimeMessage = this.onRuntimeMessage.bind(this);
+    }
+
+    setFetchState(nextState, options = {}) {
+      if (options.hydrate) this.fetchState.force(nextState, options.metadata);
+      else this.fetchState.transition(nextState, options.metadata);
+      this.isFetching = ["fetching", "refreshing"].includes(this.fetchState.state);
+    }
+
+    setDownloadState(nextState, options = {}) {
+      if (options.hydrate) this.downloadState.force(nextState, options.metadata);
+      else this.downloadState.transition(nextState, options.metadata);
+      this.isDownloading = ["preparing", "translating", "queued", "downloading", "cancelling"].includes(this.downloadState.state);
+      this.isPreparingDownload = ["preparing", "translating"].includes(this.downloadState.state);
+    }
+
+    setTranslationState(nextState, options = {}) {
+      if (options.hydrate) this.translationState.force(nextState, options.metadata);
+      else this.translationState.transition(nextState, options.metadata);
     }
 
     async init() {
@@ -1756,36 +985,18 @@
     async loadSettings() {
       try {
         const result = await storageGet(CONFIG.STORAGE_KEY);
-        const saved = result[CONFIG.STORAGE_KEY] || {};
-        this.settings.uiLanguage = Object.hasOwn(UI_LOCALES, saved.uiLanguage) ? saved.uiLanguage : "EN";
-        this.settings.downloadFolder = sanitizeFolderPath(saved.downloadFolder || this.settings.downloadFolder);
-        this.settings.queueDelayMs = normalizeDelay(saved.queueDelayMs);
-        this.settings.viewMode = ["list", "grid"].includes(saved.viewMode) ? saved.viewMode : "list";
-        this.settings.sortBy = ["newest", "oldest", "title-asc", "title-desc"].includes(saved.sortBy)
-          ? saved.sortBy
-          : "newest";
-        this.settings.lastDownloadAction = ["video", "audio", "json", "txt", "csv"].includes(saved.lastDownloadAction)
-          ? saved.lastDownloadAction
-          : "video";
-        this.settings.translationEnabled = Boolean(saved.translationEnabled);
-        this.settings.translationLanguage = ["EN", "VI", "JP", "KR", "CN"].includes(saved.translationLanguage)
-          ? saved.translationLanguage
-          : "VI";
-        this.settings.translationProvider = ["auto", "gemini", "groq"].includes(saved.translationProvider)
-          ? saved.translationProvider
-          : "auto";
-        this.settings.geminiModel = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"].includes(saved.geminiModel)
-          ? saved.geminiModel
-          : "gemini-3.6-flash";
-        this.settings.groqModel = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b", "llama-3.3-70b-versatile"].includes(saved.groqModel)
-          ? saved.groqModel
-          : "openai/gpt-oss-120b";
-        this.settings.geminiApiKeys = normalizeApiKeys(saved.geminiApiKeys);
-        this.settings.groqApiKeys = normalizeApiKeys(saved.groqApiKeys);
-        this.filters.search = String(saved.filters?.search || "");
-        this.filters.dateFrom = String(saved.filters?.dateFrom || "");
-        this.filters.dateTo = String(saved.filters?.dateTo || "");
+        const saved = Core.migrateSettings(result[CONFIG.STORAGE_KEY]);
+        const { filters: savedFilters, ...savedSettings } = saved;
+        Object.assign(this.settings, savedSettings, {
+          downloadFolder: sanitizeFolderPath(saved.downloadFolder) || "douyin_downloads"
+        });
+        this.filters.search = savedFilters.search;
+        this.filters.dateFrom = savedFilters.dateFrom;
+        this.filters.dateTo = savedFilters.dateTo;
         this.filters.scope = "all";
+        if (result[CONFIG.STORAGE_KEY]?.schemaVersion !== Core.SETTINGS_SCHEMA_VERSION) {
+          await this.persistSettings();
+        }
       } catch (error) {
         console.error("Failed to load settings:", error);
       }
@@ -1803,6 +1014,7 @@
     async persistSettings() {
       await storageSet({
         [CONFIG.STORAGE_KEY]: {
+          schemaVersion: Core.SETTINGS_SCHEMA_VERSION,
           downloadFolder: this.settings.downloadFolder,
           uiLanguage: this.settings.uiLanguage,
           queueDelayMs: this.settings.queueDelayMs,
@@ -2180,9 +1392,20 @@
 
     applyQueueStatus(payload) {
       const phase = payload.phase || "idle";
-      const isRunning = Boolean(payload.running) && !["completed", "cancelled"].includes(phase);
-      this.isDownloading = isRunning;
-      this.isPreparingDownload = false;
+      const stateByPhase = {
+        idle: "idle",
+        queued: "queued",
+        downloading: "downloading",
+        "item-complete": payload.running ? "downloading" : "completed",
+        "item-failed": payload.running ? "downloading" : "error",
+        cancelling: "cancelling",
+        cancelled: "cancelled",
+        completed: "completed"
+      };
+      this.setDownloadState(stateByPhase[phase] || "idle", {
+        hydrate: true,
+        metadata: { phase, queueId: payload.queueId || "" }
+      });
       this.updateDownloadProgress(payload, phase);
 
       if (phase === "queued") {
@@ -2223,6 +1446,8 @@
           payload.failedCount ? "error" : "success"
         );
       }
+
+      if (payload.errorCode) this.ui.status.dataset.errorCode = String(payload.errorCode);
 
       this.updateControlState();
     }
@@ -2488,6 +1713,7 @@
       this.ui.status.textContent = message;
       this.ui.status.dataset.kind = kind;
       this.ui.status.dataset.busy = String(Boolean(busy));
+      delete this.ui.status.dataset.errorCode;
     }
 
     setStatusKey(key, variables = {}, kind = "info", busy = false) {
@@ -2495,19 +1721,24 @@
       this.ui.status.textContent = this.t(key, variables);
       this.ui.status.dataset.kind = kind;
       this.ui.status.dataset.busy = String(Boolean(busy));
+      delete this.ui.status.dataset.errorCode;
     }
 
     setErrorStatus(error, fallbackKey) {
       const message = String(error?.message || "").trim();
+      const errorCode = String(error?.code || Core.ERROR_CODES.UNKNOWN);
       if (message && UI_TRANSLATION_KEYS.has(message)) {
         this.setStatusKey(message, {}, "error");
+        this.ui.status.dataset.errorCode = errorCode;
         return;
       }
       if (message) {
         this.setStatus(message, "error");
+        this.ui.status.dataset.errorCode = errorCode;
         return;
       }
       this.setStatusKey(fallbackKey, {}, "error");
+      this.ui.status.dataset.errorCode = errorCode;
     }
 
     getFilteredVideos() {
@@ -2741,8 +1972,9 @@
       this.filters.scope = "all";
       this.range.start = "";
       this.range.end = "";
-      this.isFetching = false;
-      this.isDownloading = false;
+      this.setFetchState("idle", { hydrate: true });
+      this.setDownloadState("idle", { hydrate: true });
+      this.setTranslationState("idle", { hydrate: true });
       this.hasFetched = false;
       this.fetchError = "";
       this.lastUpdatedAt = null;
@@ -2760,7 +1992,7 @@
       try {
         const response = await sendRuntimeMessage({ type: "GET_QUEUE_STATUS" });
         if (!response?.ok || !response.queue) {
-          this.isDownloading = false;
+          this.setDownloadState("idle", { hydrate: true });
           this.lastProgressState = null;
           this.ui.downloadProgress.hidden = true;
           this.updateControlState();
@@ -2768,6 +2000,7 @@
         }
 
         this.applyQueueStatus({
+          queueId: response.queue.queueId,
           phase: response.queue.status,
           running: response.queue.running,
           currentIndex: response.queue.currentIndex,
@@ -2775,6 +2008,7 @@
           successCount: response.queue.successCount,
           failedCount: response.queue.failedCount,
           errors: response.queue.errors,
+          errorCode: response.queue.errors?.at?.(-1)?.code || "",
           activeItem: response.queue.activeItem,
           kind: response.queue.kind,
           startedAt: response.queue.startedAt,
@@ -2801,7 +2035,7 @@
       const hadExistingData = this.hasFetched;
       const previousVideos = this.videos;
       const previousVideoMap = this.videoMap;
-      this.isFetching = true;
+      this.setFetchState(hadExistingData ? "refreshing" : "fetching");
       this.fetchError = "";
       if (!hadExistingData) {
         this.videos = [];
@@ -2820,7 +2054,12 @@
       );
 
       try {
-        const apiClient = new DouyinApiClient(secUserId, abortController.signal);
+        const apiClient = new DouyinApiClient(secUserId, {
+          signal: abortController.signal,
+          apiBaseUrl: CONFIG.API_BASE_URL,
+          requestQuery: CONFIG.REQUEST_QUERY,
+          referrer: window.location.href
+        });
         const fetchedVideos = await this.fetchAllVideos(apiClient, requestId, secUserId, (partialVideos) => {
           if (!hadExistingData) {
             this.videos = [...partialVideos];
@@ -2841,6 +2080,7 @@
         const availableIds = new Set(fetchedVideos.map((video) => video.id));
         this.selectedIds = new Set(Array.from(this.selectedIds).filter((id) => availableIds.has(id)));
         this.hasFetched = true;
+        this.setFetchState("ready");
         this.lastUpdatedAt = Date.now();
         this.renderVideos();
         this.updateSelectionUi();
@@ -2864,10 +2104,10 @@
         } else {
           this.hasFetched = true;
         }
+        this.setFetchState("error");
         this.setErrorStatus(error, "Failed to refresh videos.");
       } finally {
         if (this.isCurrentFetch(requestId, secUserId)) {
-          this.isFetching = false;
           this.fetchAbortController = null;
           this.renderVideos();
           this.updateSelectionUi();
@@ -2985,8 +2225,8 @@
     }
 
     async startMediaQueue(selectedVideos, kind) {
-      this.isDownloading = true;
-      this.isPreparingDownload = true;
+      this.setDownloadState("preparing");
+      this.setTranslationState(this.settings.translationEnabled ? "idle" : "disabled", { hydrate: true });
       this.updateControlState();
       this.setStatusKey("Preparing {kind} files...", { kind }, "info", true);
       this.updateDownloadProgress(
@@ -2997,6 +2237,8 @@
       try {
         let translations = {};
         if (this.settings.translationEnabled) {
+          this.setTranslationState("translating");
+          this.setDownloadState("translating");
           const languageNames = { EN: "English", VI: "Vietnamese", JP: "Japanese", KR: "Korean", CN: "Chinese" };
           const targetName = languageNames[this.settings.translationLanguage] || this.settings.translationLanguage;
           this.setStatusKey(
@@ -3019,9 +2261,16 @@
           });
 
           if (!translationResponse?.ok) {
-            throw new Error(translationResponse?.error || "Filename translation failed.");
+            throw new Core.CoreError(
+              translationResponse?.errorCode || Core.ERROR_CODES.AI_PROVIDER_UNAVAILABLE,
+              translationResponse?.error || "Filename translation failed.",
+              { retryable: Boolean(translationResponse?.retryable) }
+            );
           }
           translations = translationResponse.translations || {};
+          this.setTranslationState("completed", {
+            metadata: { cacheHits: Number(translationResponse.cacheHits) || 0 }
+          });
           const translatedCount = Object.keys(translations).length;
           const providerLabel = Array.isArray(translationResponse.providers)
             ? translationResponse.providers.join(" + ")
@@ -3050,7 +2299,7 @@
           throw new Error(this.t("No {kind} URLs available for the selected videos.", { kind }));
         }
 
-        this.isPreparingDownload = false;
+        this.setDownloadState("queued");
         this.updateControlState();
         this.setStatusKey("Starting {kind} queue...", { kind }, "info", true);
         const response = await sendRuntimeMessage({
@@ -3063,11 +2312,15 @@
         });
 
         if (!response?.ok) {
-          throw new Error(response?.error || "Failed to start download queue.");
+          throw new Core.CoreError(
+            response?.errorCode || Core.ERROR_CODES.DOWNLOAD_API_FAILED,
+            response?.error || "Failed to start download queue.",
+            { retryable: Boolean(response?.retryable) }
+          );
         }
       } catch (error) {
-        this.isDownloading = false;
-        this.isPreparingDownload = false;
+        if (this.translationState.state === "translating") this.setTranslationState("error");
+        this.setDownloadState("error", { hydrate: !this.downloadState.canTransition("error") });
         this.lastProgressState = null;
         this.ui.downloadProgress.hidden = true;
         this.updateControlState();
@@ -3147,11 +2400,18 @@
       if (!this.isDownloading || this.isPreparingDownload) return;
 
       try {
+        this.setDownloadState("cancelling");
+        this.updateControlState();
         const response = await sendRuntimeMessage({ type: "CANCEL_DOWNLOAD_QUEUE" });
         if (!response?.ok) {
-          throw new Error(response?.error || "Failed to cancel queue.");
+          throw new Core.CoreError(
+            response?.errorCode || Core.ERROR_CODES.DOWNLOAD_API_FAILED,
+            response?.error || "Failed to cancel queue."
+          );
         }
       } catch (error) {
+        this.setDownloadState("error", { hydrate: true });
+        this.updateControlState();
         this.setErrorStatus(error, "Failed to cancel queue.");
       }
     }

@@ -1,6 +1,10 @@
+importScripts("core.js", "background-core.js");
+
+const Core = globalThis.DYEXCore;
+const BackgroundCore = globalThis.DYEXBackgroundCore;
 const QUEUE_PREFIX = "queue:";
 const NEXT_ALARM_PREFIX = "douyin-next:";
-const SESSION_AREA = chrome.storage.session || chrome.storage.local;
+const QUEUE_AREA = chrome.storage.local;
 const DEFAULT_DELAY_MS = 700;
 const SETTINGS_KEY = "douyinDownloaderSettings";
 const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";
@@ -35,18 +39,25 @@ function getAlarmName(tabId) {
   return `${NEXT_ALARM_PREFIX}${tabId}`;
 }
 
-function sessionGet(keys) {
-  return new Promise((resolve) => {
-    SESSION_AREA.get(keys, (result) => resolve(result || {}));
+function queueStorageGet(keys) {
+  return new Promise((resolve, reject) => {
+    QUEUE_AREA.get(keys, (result) => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        reject(new Core.CoreError(Core.ERROR_CODES.STORAGE_READ_FAILED, error.message));
+        return;
+      }
+      resolve(result || {});
+    });
   });
 }
 
-function sessionSet(value) {
+function queueStorageSet(value) {
   return new Promise((resolve, reject) => {
-    SESSION_AREA.set(value, () => {
+    QUEUE_AREA.set(value, () => {
       const error = chrome.runtime.lastError;
       if (error) {
-        reject(new Error(error.message));
+        reject(new Core.CoreError(Core.ERROR_CODES.STORAGE_WRITE_FAILED, error.message));
         return;
       }
       resolve();
@@ -54,12 +65,12 @@ function sessionSet(value) {
   });
 }
 
-function sessionRemove(keys) {
+function queueStorageRemove(keys) {
   return new Promise((resolve, reject) => {
-    SESSION_AREA.remove(keys, () => {
+    QUEUE_AREA.remove(keys, () => {
       const error = chrome.runtime.lastError;
       if (error) {
-        reject(new Error(error.message));
+        reject(new Core.CoreError(Core.ERROR_CODES.STORAGE_WRITE_FAILED, error.message));
         return;
       }
       resolve();
@@ -72,17 +83,12 @@ function localGet(keys) {
     chrome.storage.local.get(keys, (result) => {
       const error = chrome.runtime.lastError;
       if (error) {
-        reject(new Error(error.message));
+        reject(new Core.CoreError(Core.ERROR_CODES.STORAGE_READ_FAILED, error.message));
         return;
       }
       resolve(result || {});
     });
   });
-}
-
-function normalizeApiKeys(value) {
-  const source = Array.isArray(value) ? value : String(value || "").split(/[\s,;]+/);
-  return Array.from(new Set(source.map((key) => String(key || "").trim()).filter(Boolean))).slice(0, 50);
 }
 
 function createAlarm(name, delayMs) {
@@ -105,11 +111,11 @@ function downloadsDownload(options) {
     chrome.downloads.download(options, (downloadId) => {
       const error = chrome.runtime.lastError;
       if (error) {
-        reject(new Error(error.message));
+        reject(new Core.CoreError(Core.ERROR_CODES.DOWNLOAD_API_FAILED, error.message, { retryable: true }));
         return;
       }
       if (typeof downloadId !== "number") {
-        reject(new Error("Download API did not return a download id."));
+        reject(new Core.CoreError(Core.ERROR_CODES.DOWNLOAD_API_FAILED, "Download API did not return a download id.", { retryable: true }));
         return;
       }
       resolve(downloadId);
@@ -125,26 +131,56 @@ function downloadsCancel(downloadId) {
 
 async function getQueue(tabId) {
   const key = getQueueKey(tabId);
-  const result = await sessionGet(key);
-  return result[key] || null;
+  const result = await queueStorageGet(key);
+  return BackgroundCore.normalizeQueue(result[key]);
+}
+
+function downloadsSearch(query) {
+  return new Promise((resolve, reject) => {
+    chrome.downloads.search(query, (items) => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        reject(new Core.CoreError(Core.ERROR_CODES.DOWNLOAD_API_FAILED, error.message, { retryable: true }));
+        return;
+      }
+      resolve(Array.isArray(items) ? items : []);
+    });
+  });
+}
+
+const queueTaskLocks = new Map();
+
+function runQueueTask(tabId, task) {
+  const previous = queueTaskLocks.get(tabId) || Promise.resolve();
+  const current = previous.catch(() => undefined).then(task);
+  queueTaskLocks.set(tabId, current);
+  return current.finally(() => {
+    if (queueTaskLocks.get(tabId) === current) queueTaskLocks.delete(tabId);
+  });
 }
 
 async function setQueue(tabId, queue) {
   const key = getQueueKey(tabId);
-  await sessionSet({ [key]: queue });
+  await queueStorageSet({ [key]: BackgroundCore.normalizeQueue(queue) });
 }
 
-async function getAllQueues() {
-  const allItems = await sessionGet(null);
+async function getQueueEntries() {
+  const allItems = await queueStorageGet(null);
   return Object.entries(allItems)
-    .filter(([key]) => key.startsWith(QUEUE_PREFIX))
-    .map(([, value]) => value)
-    .filter(Boolean);
+    .filter(([key, value]) => key.startsWith(QUEUE_PREFIX) && value)
+    .map(([key, value]) => ({
+      tabId: Number(key.slice(QUEUE_PREFIX.length)),
+      queue: BackgroundCore.normalizeQueue(value)
+    }))
+    .filter((entry) => Number.isInteger(entry.tabId) && entry.queue);
 }
 
 function sendTabMessage(tabId, payload) {
   return new Promise((resolve) => {
-    chrome.tabs.sendMessage(tabId, payload, () => resolve());
+    chrome.tabs.sendMessage(tabId, payload, () => {
+      void chrome.runtime.lastError;
+      resolve();
+    });
   });
 }
 
@@ -154,6 +190,7 @@ async function sendQueueUpdate(tabId, queue, phase, extra = {}) {
     payload: {
       phase,
       tabId,
+      queueId: queue?.queueId || "",
       running: Boolean(queue?.running),
       cancelled: Boolean(queue?.cancelled),
       currentIndex: queue?.currentIndex || 0,
@@ -171,23 +208,7 @@ async function sendQueueUpdate(tabId, queue, phase, extra = {}) {
 }
 
 function createInitialQueue(items, kind, delayMs) {
-  return {
-    running: true,
-    cancelled: false,
-    status: "queued",
-    kind,
-    items,
-    total: items.length,
-    currentIndex: 0,
-    successCount: 0,
-    failedCount: 0,
-    errors: [],
-    activeItem: null,
-    activeDownloadId: null,
-    delayMs: typeof delayMs === "number" ? delayMs : DEFAULT_DELAY_MS,
-    startedAt: Date.now(),
-    updatedAt: Date.now(),
-  };
+  return BackgroundCore.createQueue(items, kind, typeof delayMs === "number" ? delayMs : DEFAULT_DELAY_MS);
 }
 
 async function finalizeQueue(tabId, queue, phase) {
@@ -195,6 +216,7 @@ async function finalizeQueue(tabId, queue, phase) {
   queue.status = phase;
   queue.activeDownloadId = null;
   queue.activeItem = null;
+  queue.activeStartedAt = null;
   queue.updatedAt = Date.now();
   await setQueue(tabId, queue);
   await clearAlarm(getAlarmName(tabId));
@@ -206,7 +228,7 @@ async function scheduleNextDownload(tabId, delayMs) {
   await createAlarm(getAlarmName(tabId), Math.max(0, delayMs));
 }
 
-async function startNextDownload(tabId) {
+async function startNextDownloadUnlocked(tabId) {
   const queue = await getQueue(tabId);
   if (!queue) return;
 
@@ -227,6 +249,7 @@ async function startNextDownload(tabId) {
     filename: item.filename,
     url: item.url,
   };
+  queue.activeStartedAt = Date.now();
   queue.updatedAt = Date.now();
   await setQueue(tabId, queue);
   await sendQueueUpdate(tabId, queue, "downloading", {
@@ -246,33 +269,38 @@ async function startNextDownload(tabId) {
     await setQueue(tabId, queue);
   } catch (error) {
     queue.failedCount += 1;
+    queue.status = "queued";
     queue.errors.push({
       id: item.id,
       filename: item.filename,
+      code: error.code || Core.ERROR_CODES.DOWNLOAD_API_FAILED,
       message: error.message,
     });
+    queue.errors = queue.errors.slice(-100);
     queue.currentIndex += 1;
     queue.activeItem = null;
     queue.activeDownloadId = null;
+    queue.activeStartedAt = null;
     queue.updatedAt = Date.now();
     await setQueue(tabId, queue);
     await sendQueueUpdate(tabId, queue, "item-failed", {
       message: error.message,
+      errorCode: error.code || Core.ERROR_CODES.DOWNLOAD_API_FAILED,
       failedItem: item,
     });
     await scheduleNextDownload(tabId, queue.delayMs);
   }
 }
 
-async function startQueue(tabId, payload) {
+async function startQueueUnlocked(tabId, payload) {
   const queue = await getQueue(tabId);
   if (queue && queue.running) {
-    throw new Error("A download queue is already running in this tab.");
+    throw new Core.CoreError(Core.ERROR_CODES.DOWNLOAD_QUEUE_ACTIVE, "A download queue is already running in this tab.");
   }
 
   const items = Array.isArray(payload?.items) ? payload.items.filter((item) => item && item.url && item.filename) : [];
   if (!items.length) {
-    throw new Error("No files were provided for download.");
+    throw new Core.CoreError(Core.ERROR_CODES.DOWNLOAD_QUEUE_EMPTY, "No files were provided for download.");
   }
 
   const nextQueue = createInitialQueue(items, payload.kind || "video", payload.delayMs);
@@ -280,10 +308,14 @@ async function startQueue(tabId, payload) {
   await sendQueueUpdate(tabId, nextQueue, "queued", {
     message: `Queue created with ${nextQueue.total} items.`,
   });
-  await startNextDownload(tabId);
+  await startNextDownloadUnlocked(tabId);
 }
 
-async function cancelQueue(tabId) {
+function startQueue(tabId, payload) {
+  return runQueueTask(tabId, () => startQueueUnlocked(tabId, payload));
+}
+
+async function cancelQueueUnlocked(tabId) {
   const queue = await getQueue(tabId);
   if (!queue || !queue.running) {
     return { cancelled: false, message: "No active queue." };
@@ -307,6 +339,10 @@ async function cancelQueue(tabId) {
   return { cancelled: true };
 }
 
+function cancelQueue(tabId) {
+  return runQueueTask(tabId, () => cancelQueueUnlocked(tabId));
+}
+
 async function exportTextFile(payload) {
   const mimeType = payload?.mimeType || "text/plain;charset=utf-8";
   const content = typeof payload?.content === "string" ? payload.content : "";
@@ -321,13 +357,8 @@ async function exportTextFile(payload) {
   });
 }
 
-async function findQueueByDownloadId(downloadId) {
-  const queues = await getAllQueues();
-  return queues.find((queue) => queue.activeDownloadId === downloadId) || null;
-}
-
 async function findTabIdByDownloadId(downloadId) {
-  const allItems = await sessionGet(null);
+  const allItems = await queueStorageGet(null);
   for (const [key, queue] of Object.entries(allItems)) {
     if (!key.startsWith(QUEUE_PREFIX) || !queue || queue.activeDownloadId !== downloadId) {
       continue;
@@ -407,8 +438,15 @@ function extractJsonObject(text) {
     if (start >= 0 && end > start) {
       return JSON.parse(source.slice(start, end + 1));
     }
-    throw new Error("The AI provider returned an invalid translation response.");
+    throw new Core.CoreError(
+      Core.ERROR_CODES.AI_RESPONSE_INVALID,
+      "The AI provider returned an invalid translation response."
+    );
   }
+}
+
+function startNextDownload(tabId) {
+  return runQueueTask(tabId, () => startNextDownloadUnlocked(tabId));
 }
 
 function parseTranslations(text, sourceItems) {
@@ -426,7 +464,10 @@ function parseTranslations(text, sourceItems) {
   }
 
   if (!Object.keys(translations).length) {
-    throw new Error("The AI provider did not return any usable filename titles.");
+    throw new Core.CoreError(
+      Core.ERROR_CODES.AI_RESPONSE_INVALID,
+      "The AI provider did not return any usable filename titles."
+    );
   }
   return translations;
 }
@@ -438,6 +479,15 @@ async function readProviderError(response) {
   } catch (_error) {
     return "";
   }
+}
+
+function getRetryAfterMs(response) {
+  const value = String(response?.headers?.get?.("retry-after") || "").trim();
+  if (!value) return 0;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? Math.max(0, timestamp - Date.now()) : 0;
 }
 
 async function callGemini(key, items, languageCode, model) {
@@ -481,6 +531,8 @@ async function callGemini(key, items, languageCode, model) {
     const detail = await readProviderError(response);
     const error = new Error(detail || `Gemini request failed (${response.status}).`);
     error.status = response.status;
+    error.retryAfterMs = getRetryAfterMs(response);
+    error.provider = "gemini";
     throw error;
   }
 
@@ -519,6 +571,8 @@ async function callGroq(key, items, languageCode, model) {
     const detail = await readProviderError(response);
     const error = new Error(detail || `Groq request failed (${response.status}).`);
     error.status = response.status;
+    error.retryAfterMs = getRetryAfterMs(response);
+    error.provider = "groq";
     throw error;
   }
 
@@ -526,101 +580,316 @@ async function callGroq(key, items, languageCode, model) {
   return parseTranslations(payload?.choices?.[0]?.message?.content, items);
 }
 
-function createKeyState(keys) {
+async function createKeyState(provider, keys, healthRegistry) {
   return {
-    keys,
+    provider,
+    entries: await healthRegistry.describe(provider, keys),
     cursor: 0,
-    unavailable: new Set(),
+    unavailable: new Set()
   };
 }
 
-async function callProviderWithKeyRotation(provider, state, items, languageCode, model) {
+async function callProviderWithKeyRotation(provider, state, items, languageCode, model, healthRegistry) {
   let lastError = null;
   let attempted = 0;
+  const now = Date.now();
 
-  while (attempted < state.keys.length) {
-    const index = state.cursor % state.keys.length;
+  while (attempted < state.entries.length) {
+    const index = state.cursor % state.entries.length;
+    const entry = state.entries[index];
     attempted += 1;
-    if (state.unavailable.has(index)) {
-      state.cursor = (index + 1) % state.keys.length;
-      continue;
-    }
+    state.cursor = (index + 1) % Math.max(1, state.entries.length);
+    if (state.unavailable.has(entry.id) || healthRegistry.isBlocked(entry, now)) continue;
 
     try {
-      return provider === "gemini"
-        ? await callGemini(state.keys[index], items, languageCode, model)
-        : await callGroq(state.keys[index], items, languageCode, model);
+      const translations = provider === "gemini"
+        ? await callGemini(entry.key, items, languageCode, model)
+        : await callGroq(entry.key, items, languageCode, model);
+      healthRegistry.markSuccess(entry);
+      return translations;
     } catch (error) {
-      lastError = error;
-      state.cursor = (index + 1) % state.keys.length;
-      if ([400, 401, 403, 429].includes(Number(error.status))) {
-        state.unavailable.add(index);
-      }
+      const classifiedError = healthRegistry.markFailure(entry, error);
+      lastError = classifiedError;
+      state.unavailable.add(entry.id);
+      if (classifiedError.code === Core.ERROR_CODES.AI_PROVIDER_UNAVAILABLE) break;
     }
   }
 
-  throw lastError || new Error(`No available ${provider} API key remains.`);
+  throw lastError || new Core.CoreError(
+    Core.ERROR_CODES.AI_KEYS_UNAVAILABLE,
+    `No healthy ${provider} API key is currently available.`,
+    { retryable: true }
+  );
 }
 
-async function translateBatch(items, languageCode, providerOrder, providerStates, selectedModels) {
+async function translateBatch(items, languageCode, providerOrder, providerStates, selectedModels, healthRegistry) {
   let lastError = null;
   for (const provider of providerOrder) {
     const state = providerStates[provider];
-    if (!state?.keys.length || state.unavailable.size >= state.keys.length) continue;
+    if (!state?.entries.length) continue;
     try {
       const model = selectedModels[provider];
-      const translations = await callProviderWithKeyRotation(provider, state, items, languageCode, model);
+      const translations = await callProviderWithKeyRotation(
+        provider,
+        state,
+        items,
+        languageCode,
+        model,
+        healthRegistry
+      );
       return { translations, provider, model };
     } catch (error) {
       lastError = error;
     }
   }
-  throw new Error(lastError?.message || "All configured AI providers and API keys are unavailable.");
+  throw lastError || new Core.CoreError(
+    Core.ERROR_CODES.AI_KEYS_UNAVAILABLE,
+    "All configured AI providers and API keys are unavailable.",
+    { retryable: true }
+  );
 }
 
 async function translateVideoTitles(payload) {
-  const result = await localGet(SETTINGS_KEY);
-  const settings = result[SETTINGS_KEY] || {};
+  const settingsResult = await localGet(SETTINGS_KEY);
+  const rawSettings = settingsResult[SETTINGS_KEY] || {};
+  const settings = Core.migrateSettings(rawSettings);
+  if (rawSettings.schemaVersion !== Core.SETTINGS_SCHEMA_VERSION) {
+    await BackgroundCore.localSet({ [SETTINGS_KEY]: settings });
+  }
   if (!settings.translationEnabled) {
-    return { translations: {}, providers: [] };
+    return { translations: {}, providers: [], cacheHits: 0 };
   }
 
   const languageCode = LANGUAGE_NAMES[settings.translationLanguage] ? settings.translationLanguage : "VI";
   const providerMode = ["auto", "gemini", "groq"].includes(settings.translationProvider)
     ? settings.translationProvider
     : "auto";
-  const geminiKeys = normalizeApiKeys(settings.geminiApiKeys);
-  const groqKeys = normalizeApiKeys(settings.groqApiKeys);
+  const geminiKeys = Core.normalizeApiKeys(settings.geminiApiKeys);
+  const groqKeys = Core.normalizeApiKeys(settings.groqApiKeys);
   const selectedModels = {
     gemini: GEMINI_MODELS.has(settings.geminiModel) ? settings.geminiModel : DEFAULT_GEMINI_MODEL,
-    groq: GROQ_MODELS.has(settings.groqModel) ? settings.groqModel : DEFAULT_GROQ_MODEL,
-  };
-  const providerStates = {
-    gemini: createKeyState(geminiKeys),
-    groq: createKeyState(groqKeys),
+    groq: GROQ_MODELS.has(settings.groqModel) ? settings.groqModel : DEFAULT_GROQ_MODEL
   };
   const providerOrder = providerMode === "auto" ? ["gemini", "groq"] : [providerMode];
-  const items = (Array.isArray(payload?.items) ? payload.items : [])
-    .filter((item) => item && item.id)
-    .slice(0, 500);
+  const items = Array.from(new Map(
+    (Array.isArray(payload?.items) ? payload.items : [])
+      .filter((item) => item && item.id)
+      .slice(0, 500)
+      .map((item) => [String(item.id), item])
+  ).values());
 
   if (!items.length) {
-    throw new Error("No video titles were supplied for translation.");
+    throw new Core.CoreError(
+      Core.ERROR_CODES.TRANSLATION_INPUT_EMPTY,
+      "No video titles were supplied for translation."
+    );
   }
-  if (!providerOrder.some((provider) => providerStates[provider].keys.length)) {
-    throw new Error("No API key is configured for the selected AI provider.");
+  if (!providerOrder.some((provider) => (provider === "gemini" ? geminiKeys : groqKeys).length)) {
+    throw new Core.CoreError(
+      Core.ERROR_CODES.AI_KEYS_UNAVAILABLE,
+      "No API key is configured for the selected AI provider."
+    );
   }
 
+  const [cache, healthRegistry] = await Promise.all([
+    BackgroundCore.TranslationCache.load(),
+    BackgroundCore.KeyHealthRegistry.load()
+  ]);
+  const providerStates = {
+    gemini: await createKeyState("gemini", geminiKeys, healthRegistry),
+    groq: await createKeyState("groq", groqKeys, healthRegistry)
+  };
+  const cacheContext = { languageCode, providerMode, selectedModels };
+  const cacheKeys = new Map();
   const translations = {};
-  const providers = new Set();
-  for (let index = 0; index < items.length; index += TRANSLATION_BATCH_SIZE) {
-    const batch = items.slice(index, index + TRANSLATION_BATCH_SIZE);
-    const resultForBatch = await translateBatch(batch, languageCode, providerOrder, providerStates, selectedModels);
-    Object.assign(translations, resultForBatch.translations);
-    providers.add(`${resultForBatch.provider === "gemini" ? "Gemini" : "Groq"} (${resultForBatch.model})`);
+  const missingItems = [];
+
+  for (const item of items) {
+    const cacheKey = await BackgroundCore.createTranslationCacheKey(item, cacheContext);
+    cacheKeys.set(String(item.id), cacheKey);
+    const cachedTitle = cache.get(cacheKey);
+    if (cachedTitle) translations[String(item.id)] = cachedTitle;
+    else missingItems.push(item);
   }
 
-  return { translations, providers: Array.from(providers) };
+  const cacheHits = items.length - missingItems.length;
+  const providers = new Set();
+  try {
+    for (let index = 0; index < missingItems.length; index += TRANSLATION_BATCH_SIZE) {
+      const batch = missingItems.slice(index, index + TRANSLATION_BATCH_SIZE);
+      const resultForBatch = await translateBatch(
+        batch,
+        languageCode,
+        providerOrder,
+        providerStates,
+        selectedModels,
+        healthRegistry
+      );
+      Object.assign(translations, resultForBatch.translations);
+      Object.entries(resultForBatch.translations).forEach(([id, title]) => cache.set(cacheKeys.get(id), title));
+      providers.add(`${resultForBatch.provider === "gemini" ? "Gemini" : "Groq"} (${resultForBatch.model})`);
+    }
+  } finally {
+    await Promise.allSettled([cache.save(), healthRegistry.save()]);
+  }
+
+  if (cacheHits && !providers.size) providers.add("Cache");
+  return { translations, providers: Array.from(providers), cacheHits };
+}
+
+let translationTaskChain = Promise.resolve();
+
+function enqueueTranslation(payload) {
+  const task = translationTaskChain.catch(() => undefined).then(() => translateVideoTitles(payload));
+  translationTaskChain = task;
+  return task;
+}
+
+function createErrorResponse(error, fallbackCode = Core.ERROR_CODES.UNKNOWN) {
+  const serialized = BackgroundCore.serializeError(error, fallbackCode);
+  return {
+    ok: false,
+    error: serialized.message,
+    errorCode: serialized.code,
+    retryable: serialized.retryable,
+    status: serialized.status
+  };
+}
+
+function reportBackgroundError(scope, error) {
+  const serialized = BackgroundCore.serializeError(error);
+  console.error(`[Douyin Downloader:${serialized.code}] ${scope}: ${serialized.message}`);
+}
+
+async function applyTerminalDownloadState(tabId, queue, state, errorMessage = "") {
+  const item = queue.items[queue.currentIndex];
+  if (state === "complete") {
+    queue.successCount += 1;
+    if (item?.id && !queue.completedItemIds.includes(String(item.id))) {
+      queue.completedItemIds.push(String(item.id));
+    }
+    queue.currentIndex += 1;
+    queue.status = queue.cancelled ? "cancelling" : "queued";
+    queue.activeDownloadId = null;
+    queue.activeItem = null;
+    queue.activeStartedAt = null;
+    queue.updatedAt = Date.now();
+    await setQueue(tabId, queue);
+    await sendQueueUpdate(tabId, queue, "item-complete", { completedItem: item });
+  } else {
+    const code = errorMessage === "recovery-ambiguous"
+      ? Core.ERROR_CODES.DOWNLOAD_RECOVERY_SKIPPED
+      : Core.ERROR_CODES.DOWNLOAD_INTERRUPTED;
+    queue.failedCount += 1;
+    queue.currentIndex += 1;
+    queue.status = queue.cancelled ? "cancelling" : "queued";
+    queue.activeDownloadId = null;
+    queue.activeItem = null;
+    queue.activeStartedAt = null;
+    queue.errors.push({
+      id: item?.id,
+      filename: item?.filename,
+      code,
+      message: errorMessage || "interrupted"
+    });
+    queue.errors = queue.errors.slice(-100);
+    queue.updatedAt = Date.now();
+    await setQueue(tabId, queue);
+    await sendQueueUpdate(tabId, queue, queue.cancelled ? "cancelled" : "item-failed", {
+      failedItem: item,
+      errorCode: code,
+      message: errorMessage || "interrupted"
+    });
+  }
+
+  if (queue.cancelled) {
+    await finalizeQueue(tabId, queue, "cancelled");
+    return;
+  }
+  if (queue.currentIndex >= queue.total) {
+    await finalizeQueue(tabId, queue, "completed");
+    return;
+  }
+  if (queue.activeDownloadId || queue.activeItem) {
+    await sendQueueUpdate(tabId, queue, "downloading", { recovered: true });
+    return;
+  }
+  await scheduleNextDownload(tabId, queue.delayMs);
+}
+
+async function recoverQueue(tabId) {
+  return runQueueTask(tabId, async () => {
+    const queue = await getQueue(tabId);
+    if (!queue || !queue.running) return;
+    if (queue.cancelled) {
+      await finalizeQueue(tabId, queue, "cancelled");
+      return;
+    }
+    if (queue.currentIndex >= queue.total) {
+      await finalizeQueue(tabId, queue, "completed");
+      return;
+    }
+
+    if (queue.activeDownloadId) {
+      const [download] = await downloadsSearch({ id: queue.activeDownloadId });
+      if (download?.state === "complete") {
+        await applyTerminalDownloadState(tabId, queue, "complete");
+        return;
+      }
+      if (download?.state === "interrupted") {
+        await applyTerminalDownloadState(tabId, queue, "interrupted", download.error || "interrupted");
+        return;
+      }
+      if (download?.state === "in_progress") {
+        await sendQueueUpdate(tabId, queue, "downloading", { recovered: true });
+        return;
+      }
+      await applyTerminalDownloadState(tabId, queue, "interrupted", "recovery-ambiguous");
+      return;
+    }
+
+    if (queue.activeItem || queue.activeStartedAt) {
+      await applyTerminalDownloadState(tabId, queue, "interrupted", "recovery-ambiguous");
+      return;
+    }
+    await scheduleNextDownload(tabId, 0);
+    await sendQueueUpdate(tabId, queue, "queued", { recovered: true });
+  });
+}
+
+async function recoverQueues() {
+  const entries = await getQueueEntries();
+  const staleCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  await Promise.allSettled(entries.map(async ({ tabId, queue }) => {
+    if (!queue.running && Number(queue.updatedAt || 0) < staleCutoff) {
+      await queueStorageRemove(getQueueKey(tabId));
+      return;
+    }
+    if (queue.running) await recoverQueue(tabId);
+  }));
+}
+
+async function migrateLegacySessionQueues() {
+  if (!chrome.storage.session) return;
+  const legacyItems = await new Promise((resolve) => {
+    chrome.storage.session.get(null, (result) => resolve(result || {}));
+  });
+  const queueEntries = Object.entries(legacyItems).filter(([key, value]) => key.startsWith(QUEUE_PREFIX) && value);
+  if (!queueEntries.length) return;
+  const localItems = await queueStorageGet(queueEntries.map(([key]) => key));
+  const migrated = {};
+  queueEntries.forEach(([key, value]) => {
+    if (!localItems[key]) migrated[key] = BackgroundCore.normalizeQueue(value);
+  });
+  if (Object.keys(migrated).length) await queueStorageSet(migrated);
+  await new Promise((resolve) => {
+    chrome.storage.session.remove(queueEntries.map(([key]) => key), () => resolve());
+  });
+}
+
+async function initializePersistentQueues() {
+  await migrateLegacySessionQueues();
+  await recoverQueues();
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -628,23 +897,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message?.type === "START_DOWNLOAD_QUEUE") {
     if (typeof tabId !== "number") {
-      sendResponse({ ok: false, error: "No active tab context for this download request." });
+      sendResponse(createErrorResponse(new Core.CoreError(
+        Core.ERROR_CODES.DOWNLOAD_API_FAILED,
+        "No active tab context for this download request."
+      )));
       return false;
     }
     startQueue(tabId, message.payload)
       .then(() => sendResponse({ ok: true }))
-      .catch((error) => sendResponse({ ok: false, error: error.message }));
+      .catch((error) => sendResponse(createErrorResponse(error, Core.ERROR_CODES.DOWNLOAD_API_FAILED)));
     return true;
   }
 
   if (message?.type === "CANCEL_DOWNLOAD_QUEUE") {
     if (typeof tabId !== "number") {
-      sendResponse({ ok: false, error: "No active tab context for this cancel request." });
+      sendResponse(createErrorResponse(new Core.CoreError(
+        Core.ERROR_CODES.DOWNLOAD_API_FAILED,
+        "No active tab context for this cancel request."
+      )));
       return false;
     }
     cancelQueue(tabId)
       .then((result) => sendResponse({ ok: true, result }))
-      .catch((error) => sendResponse({ ok: false, error: error.message }));
+      .catch((error) => sendResponse(createErrorResponse(error, Core.ERROR_CODES.DOWNLOAD_API_FAILED)));
     return true;
   }
 
@@ -655,21 +930,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     getQueue(tabId)
       .then((queue) => sendResponse({ ok: true, queue }))
-      .catch((error) => sendResponse({ ok: false, error: error.message }));
+      .catch((error) => sendResponse(createErrorResponse(error, Core.ERROR_CODES.STORAGE_READ_FAILED)));
     return true;
   }
 
   if (message?.type === "DOWNLOAD_TEXT_FILE") {
     exportTextFile(message.payload)
       .then(() => sendResponse({ ok: true }))
-      .catch((error) => sendResponse({ ok: false, error: error.message }));
+      .catch((error) => sendResponse(createErrorResponse(error, Core.ERROR_CODES.DOWNLOAD_API_FAILED)));
     return true;
   }
 
   if (message?.type === "TRANSLATE_VIDEO_TITLES") {
-    translateVideoTitles(message.payload)
+    enqueueTranslation(message.payload)
       .then((result) => sendResponse({ ok: true, ...result }))
-      .catch((error) => sendResponse({ ok: false, error: error.message || "Filename translation failed." }));
+      .catch((error) => sendResponse(createErrorResponse(error, Core.ERROR_CODES.AI_PROVIDER_UNAVAILABLE)));
     return true;
   }
 
@@ -678,59 +953,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.downloads.onChanged.addListener(async (delta) => {
   if (!delta || typeof delta.id !== "number" || !delta.state || !delta.state.current) return;
-
-  const tabId = await findTabIdByDownloadId(delta.id);
-  if (typeof tabId !== "number") return;
-
-  const queue = await getQueue(tabId);
-  if (!queue || queue.activeDownloadId !== delta.id) return;
-
-  const item = queue.items[queue.currentIndex];
-  const state = delta.state.current;
-
-  if (state === "complete") {
-    queue.successCount += 1;
-    queue.currentIndex += 1;
-    queue.activeDownloadId = null;
-    queue.activeItem = null;
-    queue.updatedAt = Date.now();
-    await setQueue(tabId, queue);
-    await sendQueueUpdate(tabId, queue, "item-complete", {
-      completedItem: item,
+  try {
+    const tabId = await findTabIdByDownloadId(delta.id);
+    if (typeof tabId !== "number") return;
+    await runQueueTask(tabId, async () => {
+      const queue = await getQueue(tabId);
+      if (!queue || queue.activeDownloadId !== delta.id) return;
+      const state = delta.state.current;
+      if (state === "complete") {
+        await applyTerminalDownloadState(tabId, queue, "complete");
+      } else if (state === "interrupted") {
+        await applyTerminalDownloadState(tabId, queue, "interrupted", delta.error?.current || "interrupted");
+      }
     });
-
-    if (queue.cancelled) {
-      await finalizeQueue(tabId, queue, "cancelled");
-      return;
-    }
-
-    await scheduleNextDownload(tabId, queue.delayMs);
-    return;
-  }
-
-  if (state === "interrupted") {
-    queue.failedCount += 1;
-    queue.currentIndex += 1;
-    queue.activeDownloadId = null;
-    queue.activeItem = null;
-    queue.errors.push({
-      id: item?.id,
-      filename: item?.filename,
-      message: delta.error?.current || "interrupted",
-    });
-    queue.updatedAt = Date.now();
-    await setQueue(tabId, queue);
-    await sendQueueUpdate(tabId, queue, queue.cancelled ? "cancelled" : "item-failed", {
-      failedItem: item,
-      message: delta.error?.current || "interrupted",
-    });
-
-    if (queue.cancelled) {
-      await finalizeQueue(tabId, queue, "cancelled");
-      return;
-    }
-
-    await scheduleNextDownload(tabId, queue.delayMs);
+  } catch (error) {
+    reportBackgroundError("download event", error);
   }
 });
 
@@ -738,10 +975,31 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (!alarm?.name || !alarm.name.startsWith(NEXT_ALARM_PREFIX)) return;
   const tabId = Number(alarm.name.slice(NEXT_ALARM_PREFIX.length));
   if (Number.isNaN(tabId)) return;
-  await startNextDownload(tabId);
+  try {
+    await startNextDownload(tabId);
+  } catch (error) {
+    reportBackgroundError("queue alarm", error);
+  }
 });
 
 chrome.tabs.onRemoved.addListener(async (tabId) => {
-  await clearAlarm(getAlarmName(tabId));
-  await sessionRemove(getQueueKey(tabId));
+  try {
+    const queue = await getQueue(tabId);
+    if (!queue?.running) {
+      await clearAlarm(getAlarmName(tabId));
+      await queueStorageRemove(getQueueKey(tabId));
+    }
+  } catch (error) {
+    reportBackgroundError("tab cleanup", error);
+  }
 });
+
+chrome.runtime.onStartup.addListener(() => {
+  initializePersistentQueues().catch((error) => reportBackgroundError("startup recovery", error));
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  initializePersistentQueues().catch((error) => reportBackgroundError("install migration", error));
+});
+
+initializePersistentQueues().catch((error) => reportBackgroundError("worker recovery", error));
